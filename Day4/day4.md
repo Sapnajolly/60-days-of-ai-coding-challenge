@@ -1,5 +1,7 @@
 # Learning
-Solve a problen step by step, instead of giving co,plex problem
+
+Understand prompting-
+Solve a problen step by step, instead of giving complex problem
 It helps AI in thinking, helps in understaing how AI reachs the answers 
 
 
