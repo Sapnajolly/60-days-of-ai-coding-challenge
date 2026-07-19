@@ -1,3 +1,9 @@
+# Learning
+Solve a problen step by step, instead of giving co,plex problem
+It helps AI in thinking, helps in understaing how AI reachs the answers 
+
+
+
 # 🚀 AI-Powered Career Roadmap
 
 **Personalized Strategy Report — Data Science Career Transition**
