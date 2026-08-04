@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0a0a0f;
+    color: #f0f0f0;
+    padding: 24px 20px;
+    min-height: 100vh;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .brand {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #888;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .main-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #666;
+    margin-top: 4px;
+  }
+  .section {
+    background: #13131a;
+    border: 1px solid #1e1e2e;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 14px;
+  }
+  /* Prediction Section */
+  .pred-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .pred-card {
+    background: #0d0d14;
+    border-radius: 8px;
+    padding: 14px;
+    border: 1px solid #1a1a28;
+    text-align: center;
+  }
+  .pred-medal { font-size: 22px; margin-bottom: 6px; }
+  .pred-label { font-size: 9px; color: #555; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  .pred-team { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+  .confidence-bar-wrap { background: #1a1a28; border-radius: 4px; height: 4px; }
+  .confidence-bar { height: 4px; border-radius: 4px; }
+  .conf-text { font-size: 11px; color: #888; margin-top: 5px; }
+  /* Score Section */
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .score-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid #6c63ff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .score-num { font-size: 26px; font-weight: 800; color: #6c63ff; line-height: 1; }
+  .score-denom { font-size: 10px; color: #444; }
+  .score-info {}
+  .score-class { font-size: 18px; font-weight: 700; color: #fff; }
+  .score-desc { font-size: 12px; color: #777; margin-top: 4px; line-height: 1.5; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .tag { font-size: 10px; padding: 3px 9px; border-radius: 20px; }
+  .tag-green { background: #0d2e1a; color: #4ade80; border: 1px solid #166534; }
+  .tag-red { background: #2e0d0d; color: #f87171; border: 1px solid #7f1d1d; }
+  /* Personality Match */
+  .legend-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .legend-card {
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+  .legend-messi { background: #0d1e2e; border: 1px solid #1e4a6e; }
+  .legend-ronaldo { background: #1e0d0d; border: 1px solid #6e1e1e; }
+  .legend-pct { font-size: 32px; font-weight: 800; line-height: 1; }
+  .messi-color { color: #38bdf8; }
+  .ronaldo-color { color: #f87171; }
+  .legend-name { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+  .legend-tag { font-size: 10px; margin-top: 6px; color: #666; }
+  .match-bar-wrap { background: #1a1a28; border-radius: 6px; height: 8px; overflow: hidden; display: flex; margin-bottom: 8px; }
+  .bar-messi { background: #38bdf8; }
+  .bar-ronaldo { background: #f87171; }
+  .bar-labels { display: flex; justify-content: space-between; font-size: 10px; color: #555; }
+  /* Archetype */
+  .archetype-box {
+    background: linear-gradient(135deg, #0d1a2e 0%, #1a0d2e 100%);
+    border: 1px solid #2a1e4e;
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .archetype-icon { font-size: 32px; margin-bottom: 8px; }
+  .archetype-name { font-size: 20px; font-weight: 800; color: #c4b5fd; }
+  .archetype-desc { font-size: 12px; color: #888; margin-top: 6px; line-height: 1.6; }
+  .trait-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; }
+  .trait-chip { font-size: 10px; padding: 3px 10px; border-radius: 20px; background: #1e1a3e; border: 1px solid #3730a3; color: #a5b4fc; }
+  /* Recommendations */
+  .rec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .rec-card { background: #0d0d14; border: 1px solid #1a1a28; border-radius: 8px; padding: 12px; }
+  .rec-type { font-size: 9px; letter-spacing: 2px; color: #555; text-transform: uppercase; margin-bottom: 4px; }
+  .rec-value { font-size: 14px; font-weight: 700; color: #fff; }
+  .rec-why { font-size: 11px; color: #666; margin-top: 3px; }
+  /* Players */
+  .player-row { display: flex; flex-direction: column; gap: 8px; }
+  .player-item { display: flex; align-items: center; gap: 12px; padding: 10px; background: #0d0d14; border-radius: 8px; border: 1px solid #1a1a28; }
+  .player-flag { font-size: 20px; }
+  .player-info { flex: 1; }
+  .player-name { font-size: 13px; font-weight: 700; color: #fff; }
+  .player-stat { font-size: 11px; color: #666; }
+  .player-rating { font-size: 13px; font-weight: 700; color: #fbbf24; }
+  /* Insight */
+  .insight-box {
+    background: #0d0d14;
+    border-left: 3px solid #6c63ff;
+    border-radius: 0 8px 8px 0;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+  }
+  .insight-text { font-size: 12px; color: #aaa; line-height: 1.6; }
+  .insight-text strong { color: #fff; }
+  .winner-badge {
+    display: inline-block;
+    background: #fbbf24;
+    color: #000;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .divider { height: 1px; background: #1a1a28; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand">AB Talks</div>
+  <div class="main-title">⚽ Football Intelligence Profile</div>
+  <div class="subtitle">World Cup 2026 · Football IQ · Personality Match</div>
+</div>
+
+<!-- SECTION 1: PREDICTIONS -->
+<div class="section">
+  <div class="section-title">🌍 Stage 1 — World Cup 2026 Predictions</div>
+  <div class="pred-grid">
+    <div class="pred-card">
+      <div class="pred-medal">🥇</div>
+      <div class="pred-label">Winner</div>
+      <div class="pred-team">France</div>
+      <div class="confidence-bar-wrap"><div class="confidence-bar" style="width:78%; background:#fbbf24;"></div></div>
+      <div class="conf-text">78% confidence</div>
+    </div>
+    <div class="pred-card">
+      <div class="pred-medal">🥈</div>
+      <div class="pred-label">Runner-Up</div>
+      <div class="pred-team">Argentina</div>
+      <div class="confidence-bar-wrap"><div class="confidence-bar" style="width:71%; background:#9ca3af;"></div></div>
+      <div class="conf-text">71% confidence</div>
+    </div>
+    <div class="pred-card">
+      <div class="pred-medal">🌟</div>
+      <div class="pred-label">Dark Horse</div>
+      <div class="pred-team">Germany</div>
+      <div class="confidence-bar-wrap"><div class="confidence-bar" style="width:58%; background:#6c63ff;"></div></div>
+      <div class="conf-text">58% confidence</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2: FOOTBALL IQ -->
+<div class="section">
+  <div class="section-title">🧠 Stage 2 — Football Awareness Score</div>
+  <div class="score-row">
+    <div class="score-circle">
+      <div class="score-num">68</div>
+      <div class="score-denom">/100</div>
+    </div>
+    <div class="score-info">
+      <div class="score-class">Casual Viewer</div>
+      <div class="score-desc">Perfect score on beginner questions. Strong instincts and fast learner — you retained key facts from Stage 1 immediately.</div>
+      <div class="tag-row">
+        <span class="tag tag-green">✓ Tournament Structure</span>
+        <span class="tag tag-green">✓ Key Terminology</span>
+        <span class="tag tag-green">✓ Recent History</span>
+        <span class="tag tag-red">↑ Tactics & Formations</span>
+        <span class="tag tag-red">↑ Club Football</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: PERSONALITY MATCH -->
+<div class="section">
+  <div class="section-title">⚽ Stage 3 — Messi vs Ronaldo Personality Match</div>
+  <div class="legend-row">
+    <div class="legend-card legend-messi">
+      <div class="legend-pct messi-color">63%</div>
+      <div class="legend-name messi-color">Lionel Messi</div>
+      <div class="legend-tag">Creative · Collective · Calm</div>
+    </div>
+    <div class="legend-card legend-ronaldo">
+      <div class="legend-pct ronaldo-color">37%</div>
+      <div class="legend-name ronaldo-color">Cristiano Ronaldo</div>
+      <div class="legend-tag">Disciplined · Analytical · Driven</div>
+    </div>
+  </div>
+  <div class="match-bar-wrap">
+    <div class="bar-messi" style="width:63%;"></div>
+    <div class="bar-ronaldo" style="width:37%;"></div>
+  </div>
+  <div class="bar-labels"><span>🔵 Messi 63%</span><span>🔴 Ronaldo 37%</span></div>
+</div>
+
+<!-- SECTION 4: ARCHETYPE -->
+<div class="section">
+  <div class="section-title">🧬 Your Football Personality Archetype</div>
+  <div class="archetype-box">
+    <div class="archetype-icon">🎨</div>
+    <div class="archetype-name">Tactical Visionary</div>
+    <div class="archetype-desc">You see the bigger picture before others do. Calm under pressure, creative in approach, and always thinking about how your actions serve the team. You don't chase glory — you build the conditions for it.</div>
+    <div class="trait-chips">
+      <span class="trait-chip">Process-Focused</span>
+      <span class="trait-chip">Creative Thinker</span>
+      <span class="trait-chip">Calm Under Pressure</span>
+      <span class="trait-chip">Team-First</span>
+      <span class="trait-chip">Analytical</span>
+      <span class="trait-chip">Adaptive Learner</span>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5: RECOMMENDATIONS -->
+<div class="section">
+  <div class="section-title">🔭 Your Personalised Football Journey</div>
+  <div class="rec-grid">
+    <div class="rec-card">
+      <div class="rec-type">⚽ Player to Follow</div>
+      <div class="rec-value">Kevin De Bruyne</div>
+      <div class="rec-why">Belgium's creative engine — calm, tactical, team-first. Your football twin.</div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-type">🏟️ Club to Support</div>
+      <div class="rec-value">Barcelona</div>
+      <div class="rec-why">Famous for creative, collective, tactical football — built around vision, not brute force.</div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-type">🌍 National Team</div>
+      <div class="rec-value">Spain</div>
+      <div class="rec-why">The most tactically sophisticated team in the world. Patient, precise, and collective.</div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-type">🔥 Rivalry to Explore</div>
+      <div class="rec-value">El Clásico</div>
+      <div class="rec-why">Barcelona vs Real Madrid — the greatest rivalry in sport. Tactical battles every time.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 6: KEY INSIGHTS -->
+<div class="section">
+  <div class="section-title">💡 Key Insights Summary</div>
+  <div class="insight-box">
+    <div class="insight-text"><strong>You're a natural Messi-type (63%).</strong> You're adaptive, creative, calm under pressure, and deeply team-oriented. You don't need the spotlight — you build things that work. Your moderate ambition and low competitiveness (2/5) mean you're driven by contribution, not ego.</div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-text"><strong>Your Ronaldo side (37%)</strong> shows up in your discipline (4/5) and analytical response to setbacks — you don't panic, you study what went wrong and adjust. That's a hallmark of Ronaldo's mental framework.</div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-text"><strong>Football prediction insight:</strong> Based on the workbook's live data, <strong>France (78%)</strong> are tournament favourites — Mbappé rated 95/100, Form Score 90, clean opening win. Argentina (reigning champions, ranked #1) are the most dangerous threat. Watch Germany — 7 goals in their first match is no accident.</div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-text"><strong>You came in knowing almost nothing — and scored 68/100.</strong> That's not beginner energy. You absorb information fast and apply it immediately. Keep watching. You'll be a Football Enthusiast within one tournament.</div>
+  </div>
+</div>
+
+</body>
+</html>
