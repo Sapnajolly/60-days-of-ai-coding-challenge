@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 20 - AI Face Puzzle Game</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
+h1{font-size:2rem;margin-bottom:6px;background:linear-gradient(135deg,#6c63ff,#f50057);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+p.sub{color:#aaa;margin-bottom:20px;font-size:.9rem}
+#controls{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;justify-content:center}
+button{background:#6c63ff;color:#fff;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-size:.9rem;transition:background .2s}
+button:hover{background:#574fd6}
+button.sec{background:#333}button.sec:hover{background:#444}
+select{background:#1e1e2e;color:#fff;border:1px solid #444;padding:10px 14px;border-radius:8px;font-size:.9rem}
+#stats{display:flex;gap:24px;margin-bottom:16px;font-size:.95rem;color:#ccc}
+#stats span b{color:#6c63ff}
+video,canvas{border-radius:12px;border:2px solid #333;max-width:400px;width:100%}
+#puzzle-container{display:none;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:520px}
+#puzzle-grid{display:grid;gap:3px;background:#1e1e2e;padding:10px;border-radius:12px;border:2px solid #6c63ff}
+.piece{cursor:grab;border-radius:3px;transition:box-shadow .15s}
+.piece.correct{box-shadow:0 0 10px #00e676}
+.piece.dragging{opacity:.5;transform:scale(1.06)}
+#lb{background:#1e1e2e;border-radius:12px;padding:16px 24px;width:100%;max-width:420px;margin-top:16px}
+#lb h3{color:#6c63ff;margin-bottom:10px}
+#lb ol{padding-left:18px}
+#lb li{color:#ccc;padding:3px 0;font-size:.88rem}
+#win{display:none;position:fixed;inset:0;background:#000b;align-items:center;justify-content:center;z-index:100}
+#win.show{display:flex}
+.wbox{background:#1e1e2e;border-radius:16px;padding:40px;text-align:center;border:2px solid #6c63ff}
+.wbox h2{font-size:2rem;color:#00e676;margin-bottom:8px}
+.wbox p{color:#ccc;margin-bottom:20px}
+.wbox .btns{display:flex;gap:12px;justify-content:center}
+</style>
+</head>
+<body>
+<h1>🧩 AI Face Puzzle Game</h1>
+<p class="sub">Day 20 — ABTalks 60-Day Claude AI Challenge</p>
+<div id="stats">
+  <span>⏱ Time: <b id="timer">00:00.0</b></span>
+  <span>🔄 Moves: <b id="moves">0</b></span>
+  <span>✅ <b id="correct">0</b>/<b id="total">0</b></span>
+</div>
+<div id="controls">
+  <button id="startCam">📷 Start Camera</button>
+  <button id="captureBtn" class="sec" disabled>📸 Capture</button>
+  <select id="diff"><option value="3">Easy 3×3</option><option value="4" selected>Medium 4×4</option><option value="5">Hard 5×5</option></select>
+  <button id="playAgain" class="sec" style="display:none">🔁 Play Again</button>
+</div>
+<div id="camera-section">
+  <video id="video" autoplay playsinline></video>
+  <canvas id="snapshot" style="display:none"></canvas>
+</div>
+<div id="puzzle-container">
+  <div id="puzzle-grid"></div>
+</div>
+<div id="lb"><h3>🏆 Best Times</h3><ol id="lb-list"><li>No scores yet</li></ol></div>
+<div id="win">
+  <div class="wbox">
+    <h2>🎉 Puzzle Solved!</h2>
+    <p id="win-msg"></p>
+    <div class="btns">
+      <button onclick="retakePhoto()">📷 New Photo</button>
+      <button class="sec" onclick="startPuzzle()">🔁 Play Again</button>
+    </div>
+  </div>
+</div>
+<script>
+let stream,imgData,interval,t0,moves=0,pieces=[],N=4,src=null;
+const video=document.getElementById('video'),snap=document.getElementById('snapshot'),
+  grid=document.getElementById('puzzle-grid'),timerEl=document.getElementById('timer'),
+  movesEl=document.getElementById('moves'),corrEl=document.getElementById('correct'),
+  totEl=document.getElementById('total'),winEl=document.getElementById('win'),
+  puzzEl=document.getElementById('puzzle-container');
+
+document.getElementById('startCam').onclick=async()=>{
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{width:400,height:400,facingMode:'user'}});
+    video.srcObject=stream;video.style.display='block';
+    document.getElementById('captureBtn').disabled=false;
+    document.getElementById('startCam').textContent='🔄 Restart Camera';
+  }catch{alert('Camera access denied. Please allow camera access.');}
+};
+document.getElementById('captureBtn').onclick=capture;
+document.getElementById('playAgain').onclick=startPuzzle;
+
+function capture(){
+  snap.width=snap.height=400;
+  snap.getContext('2d').drawImage(video,0,0,400,400);
+  imgData=snap.toDataURL('image/png');
+  video.style.display='none';snap.style.display='block';
+  document.getElementById('playAgain').style.display='inline-block';
+  startPuzzle();
+}
+
+function startPuzzle(){
+  if(!imgData){alert('Please capture a photo first!');return;}
+  N=+document.getElementById('diff').value;
+  moves=0;movesEl.textContent=0;
+  clearInterval(interval);timerEl.textContent='00:00.0';
+  pieces=Array.from({length:N*N},(_,i)=>i);shuffle(pieces);
+  renderGrid();puzzEl.style.display='flex';winEl.classList.remove('show');
+  t0=Date.now();interval=setInterval(tick,100);
+  totEl.textContent=N*N;updateCorr();
+}
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+
+function renderGrid(){
+  const sz=Math.min(460,window.innerWidth-60),ps=Math.floor(sz/N);
+  grid.style.gridTemplateColumns=`repeat(${N},${ps}px)`;grid.innerHTML='';
+  pieces.forEach((corr,cur)=>{
+    const c=document.createElement('canvas');
+    c.width=c.height=ps;c.className='piece'+(corr===cur?' correct':'');
+    c.dataset.cur=cur;c.dataset.corr=corr;
+    const ctx=c.getContext('2d'),img=new Image();
+    img.onload=()=>{
+      const s=400/N,col=corr%N,row=Math.floor(corr/N);
+      ctx.drawImage(img,col*s,row*s,s,s,0,0,ps,ps);
+      ctx.strokeStyle='rgba(255,255,255,0.12)';ctx.lineWidth=1;ctx.strokeRect(0,0,ps,ps);
+    };img.src=imgData;
+    c.draggable=true;
+    c.addEventListener('dragstart',e=>{src=e.target;src.classList.add('dragging');});
+    c.addEventListener('dragover',e=>e.preventDefault());
+    c.addEventListener('drop',e=>{
+      e.preventDefault();if(!src||src===e.target)return;
+      const si=+src.dataset.cur,di=+e.target.dataset.cur;
+      [pieces[si],pieces[di]]=[pieces[di],pieces[si]];
+      moves++;movesEl.textContent=moves;renderGrid();updateCorr();if(checkWin())onWin();
+    });
+    c.addEventListener('dragend',()=>c.classList.remove('dragging'));
+    grid.appendChild(c);
+  });
+}
+
+function updateCorr(){const c=pieces.filter((v,i)=>v===i).length;corrEl.textContent=c;return c;}
+function checkWin(){return pieces.every((v,i)=>v===i);}
+function tick(){
+  const e=((Date.now()-t0)/1000);
+  timerEl.textContent=`${String(Math.floor(e/60)).padStart(2,'0')}:${String((e%60).toFixed(1)).padStart(4,'0')}`;
+}
+function onWin(){
+  clearInterval(interval);
+  const e=((Date.now()-t0)/1000).toFixed(1);
+  document.getElementById('win-msg').textContent=`Solved in ${timerEl.textContent} with ${moves} moves on ${N}×${N}`;
+  winEl.classList.add('show');
+  const sc=JSON.parse(localStorage.getItem('pzScores')||'[]');
+  sc.push({time:+e,moves,diff:N,date:new Date().toLocaleDateString()});
+  sc.sort((a,b)=>a.time-b.time);
+  localStorage.setItem('pzScores',JSON.stringify(sc.slice(0,5)));
+  renderLB();
+}
+function renderLB(){
+  const sc=JSON.parse(localStorage.getItem('pzScores')||'[]'),l=document.getElementById('lb-list');
+  l.innerHTML=sc.length?sc.map(s=>`<li>${s.time}s — ${s.moves} moves (${s.diff}×${s.diff}) — ${s.date}</li>`).join(''):'<li>No scores yet</li>';
+}
+function retakePhoto(){winEl.classList.remove('show');puzzEl.style.display='none';snap.style.display='none';video.style.display='block';imgData=null;}
+renderLB();
+</script>
+</body>
+</html>
