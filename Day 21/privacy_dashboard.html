@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 21 - Digital Privacy Intelligence Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#0a0a14;color:#e0e0e0;min-height:100vh;padding:24px}
+h1{font-size:1.8rem;background:linear-gradient(135deg,#00bcd4,#7c4dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.sub{color:#888;font-size:.85rem;margin-bottom:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px}
+.card{background:#12121f;border-radius:14px;padding:20px;border:1px solid #1e1e3a}
+.card h3{font-size:1rem;color:#7c4dff;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.score-ring{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.ring{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;border:4px solid}
+.ring.low{border-color:#f44336;color:#f44336}
+.ring.med{border-color:#ff9800;color:#ff9800}
+.ring.high{border-color:#4caf50;color:#4caf50}
+.ring-info h4{font-size:1rem;margin-bottom:4px}
+.ring-info p{font-size:.8rem;color:#888}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bar-label{font-size:.8rem;color:#aaa;width:110px;flex-shrink:0}
+.bar-bg{flex:1;height:8px;background:#1e1e3a;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.bar-val{font-size:.8rem;color:#ccc;width:36px;text-align:right}
+.tag-cloud{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tag{padding:4px 10px;border-radius:20px;font-size:.75rem;cursor:default}
+.tag.danger{background:#f4433622;color:#f44336;border:1px solid #f4433644}
+.tag.warn{background:#ff980022;color:#ff9800;border:1px solid #ff980044}
+.tag.safe{background:#4caf5022;color:#4caf50;border:1px solid #4caf5044}
+.rec-list{list-style:none}
+.rec-list li{padding:8px 0;border-bottom:1px solid #1e1e3a;font-size:.85rem;color:#ccc;display:flex;gap:8px;align-items:flex-start}
+.rec-list li:last-child{border-bottom:none}
+.rec-list li span.icon{font-size:1rem;flex-shrink:0}
+.platform-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.platform{background:#1e1e2e;border-radius:8px;padding:10px;text-align:center;border:1px solid #2a2a4a}
+.platform .pname{font-size:.8rem;font-weight:600;margin-bottom:4px}
+.platform .prisk{font-size:.7rem;padding:2px 8px;border-radius:10px;display:inline-block}
+.risk-h{background:#f4433622;color:#f44336}
+.risk-m{background:#ff980022;color:#ff9800}
+.risk-l{background:#4caf5022;color:#4caf50}
+.exposure-total{font-size:2.5rem;font-weight:700;color:#f44336;margin-bottom:4px}
+.exposure-label{font-size:.8rem;color:#888}
+.summary-box{background:#12121f;border-radius:14px;padding:20px;border:1px solid #1e1e3a;margin-bottom:16px}
+.summary-box h2{color:#00bcd4;margin-bottom:12px}
+.summary-box p{color:#aaa;font-size:.9rem;line-height:1.6}
+</style>
+</head>
+<body>
+<h1>🔐 Digital Privacy Intelligence Dashboard</h1>
+<p class="sub">Day 21 — ABTalks 60-Day Claude AI Challenge | Visualize your digital footprint and privacy exposure</p>
+
+<div class="summary-box">
+  <h2>📊 Your Privacy Overview</h2>
+  <p>This dashboard analyzes your digital footprint across major platforms, calculates your overall privacy risk score, and provides actionable recommendations to improve your online privacy posture.</p>
+</div>
+
+<div class="grid">
+  <!-- Overall Privacy Score -->
+  <div class="card">
+    <h3>🛡️ Privacy Risk Score</h3>
+    <div class="score-ring">
+      <div class="ring low">72</div>
+      <div class="ring-info">
+        <h4>High Risk</h4>
+        <p>72 / 100 exposure<br>Needs immediate attention</p>
+      </div>
+    </div>
+    <div class="bar-row"><span class="bar-label">Data Exposure</span><div class="bar-bg"><div class="bar-fill" style="width:82%;background:#f44336"></div></div><span class="bar-val">82%</span></div>
+    <div class="bar-row"><span class="bar-label">Tracking Risk</span><div class="bar-bg"><div class="bar-fill" style="width:75%;background:#ff9800"></div></div><span class="bar-val">75%</span></div>
+    <div class="bar-row"><span class="bar-label">Account Security</span><div class="bar-bg"><div class="bar-fill" style="width:55%;background:#ff9800"></div></div><span class="bar-val">55%</span></div>
+    <div class="bar-row"><span class="bar-label">Data Sharing</span><div class="bar-bg"><div class="bar-fill" style="width:90%;background:#f44336"></div></div><span class="bar-val">90%</span></div>
+  </div>
+
+  <!-- Platform Risk Analysis -->
+  <div class="card">
+    <h3>📱 Platform Risk Analysis</h3>
+    <div class="platform-grid">
+      <div class="platform"><div class="pname">Facebook</div><span class="prisk risk-h">High Risk</span></div>
+      <div class="platform"><div class="pname">Google</div><span class="prisk risk-h">High Risk</span></div>
+      <div class="platform"><div class="pname">Instagram</div><span class="prisk risk-h">High Risk</span></div>
+      <div class="platform"><div class="pname">Twitter/X</div><span class="prisk risk-m">Med Risk</span></div>
+      <div class="platform"><div class="pname">LinkedIn</div><span class="prisk risk-m">Med Risk</span></div>
+      <div class="platform"><div class="pname">TikTok</div><span class="prisk risk-h">High Risk</span></div>
+      <div class="platform"><div class="pname">Spotify</div><span class="prisk risk-l">Low Risk</span></div>
+      <div class="platform"><div class="pname">Amazon</div><span class="prisk risk-m">Med Risk</span></div>
+    </div>
+  </div>
+
+  <!-- Data Points Exposed -->
+  <div class="card">
+    <h3>🗂️ Data Points Exposed</h3>
+    <div class="exposure-total">47</div>
+    <div class="exposure-label">unique data categories shared</div>
+    <div class="tag-cloud">
+      <span class="tag danger">📍 Location History</span>
+      <span class="tag danger">🏠 Home Address</span>
+      <span class="tag danger">📞 Phone Number</span>
+      <span class="tag danger">🎂 Date of Birth</span>
+      <span class="tag warn">💼 Employer</span>
+      <span class="tag warn">🎓 Education</span>
+      <span class="tag warn">❤️ Relationship Status</span>
+      <span class="tag warn">🛒 Purchase History</span>
+      <span class="tag safe">🌐 Public Posts</span>
+      <span class="tag safe">👤 Profile Photo</span>
+    </div>
+  </div>
+
+  <!-- Privacy Recommendations -->
+  <div class="card">
+    <h3>✅ Top Recommendations</h3>
+    <ul class="rec-list">
+      <li><span class="icon">🔑</span> Enable 2FA on all major accounts — especially Google and Facebook</li>
+      <li><span class="icon">🔒</span> Set Facebook profile to Friends Only; remove phone number from public view</li>
+      <li><span class="icon">📍</span> Disable location history on Google Maps and Instagram</li>
+      <li><span class="icon">🍪</span> Install uBlock Origin + Privacy Badger to block 3rd-party trackers</li>
+      <li><span class="icon">🗑️</span> Request data deletion from TikTok and Facebook using GDPR/CCPA rights</li>
+      <li><span class="icon">🔐</span> Use a password manager — stop reusing passwords across sites</li>
+      <li><span class="icon">📧</span> Create alias emails (e.g. SimpleLogin) for sign-ups</li>
+    </ul>
+  </div>
+
+  <!-- Ecosystem Concentration -->
+  <div class="card">
+    <h3>🌐 Ecosystem Concentration</h3>
+    <div class="bar-row"><span class="bar-label">Google Ecosystem</span><div class="bar-bg"><div class="bar-fill" style="width:85%;background:#4285f4"></div></div><span class="bar-val">85%</span></div>
+    <div class="bar-row"><span class="bar-label">Meta Ecosystem</span><div class="bar-bg"><div class="bar-fill" style="width:70%;background:#1877f2"></div></div><span class="bar-val">70%</span></div>
+    <div class="bar-row"><span class="bar-label">Apple Ecosystem</span><div class="bar-bg"><div class="bar-fill" style="width:30%;background:#888"></div></div><span class="bar-val">30%</span></div>
+    <div class="bar-row"><span class="bar-label">Amazon Ecosystem</span><div class="bar-bg"><div class="bar-fill" style="width:45%;background:#ff9900"></div></div><span class="bar-val">45%</span></div>
+    <div class="bar-row"><span class="bar-label">Microsoft</span><div class="bar-bg"><div class="bar-fill" style="width:20%;background:#00a4ef"></div></div><span class="bar-val">20%</span></div>
+    <p style="margin-top:12px;font-size:.8rem;color:#888">⚠️ High Google & Meta concentration increases cross-platform tracking risk.</p>
+  </div>
+
+  <!-- Privacy Action Plan -->
+  <div class="card">
+    <h3>🗓️ 30-Day Privacy Action Plan</h3>
+    <ul class="rec-list">
+      <li><span class="icon">📅</span><b>Week 1:</b> Audit all app permissions on your phone. Revoke unnecessary location/microphone access.</li>
+      <li><span class="icon">📅</span><b>Week 2:</b> Enable 2FA everywhere. Set up a password manager (Bitwarden is free).</li>
+      <li><span class="icon">📅</span><b>Week 3:</b> Review privacy settings on Facebook, Instagram, Google. Download and delete your data.</li>
+      <li><span class="icon">📅</span><b>Week 4:</b> Switch to privacy-respecting alternatives: DuckDuckGo, ProtonMail, Signal.</li>
+    </ul>
+  </div>
+</div>
+
+<p style="text-align:center;color:#444;font-size:.8rem;margin-top:16px">Built with Claude AI — Day 21 of the 60-Day AI Coding Challenge</p>
+</body>
+</html>
