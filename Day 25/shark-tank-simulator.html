@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🦈 AI Shark Tank Simulator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--surface3:#22223a;--accent:#00d4ff;--accent2:#7c3aed;--danger:#ef4444;--success:#10b981;--text:#e2e8f0;--text-muted:#64748b;--border:#2d2d45;--gold:#f59e0b;--glow:0 0 20px rgba(0,212,255,0.3);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(0,212,255,.05) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(124,58,237,.05) 0%,transparent 60%);pointer-events:none;z-index:0;}
+  #app{position:relative;z-index:1;}
+  header{text-align:center;padding:40px 20px 24px;border-bottom:1px solid var(--border);}
+  .logo{font-size:clamp(2rem,5vw,3.5rem);font-weight:900;background:linear-gradient(135deg,#00d4ff,#7c3aed,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+  .tagline{color:var(--text-muted);font-size:1rem;letter-spacing:2px;text-transform:uppercase;}
+  .screen{display:none;padding:24px 20px;max-width:900px;margin:0 auto;}
+  .screen.active{display:block;animation:fadeIn .4s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px;}
+  .card-title{font-size:1.1rem;font-weight:700;color:var(--accent);margin-bottom:16px;}
+  .form-group{margin-bottom:18px;}
+  label{display:block;font-size:.85rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+  input,textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;color:var(--text);font-size:.95rem;font-family:inherit;outline:none;resize:vertical;}
+  input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,.1);}
+  textarea{min-height:90px;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:600px){.form-row{grid-template-columns:1fr;}}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;font-weight:700;font-size:.95rem;cursor:pointer;border:none;transition:all .2s;font-family:inherit;}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 4px 20px rgba(0,212,255,.25);}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,212,255,.4);}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+  .btn-secondary:hover{background:var(--surface3);border-color:var(--accent);}
+  .btn-success{background:linear-gradient(135deg,var(--success),#059669);color:#fff;}
+  .btn-lg{padding:16px 36px;font-size:1.05rem;}
+  .btn-group{display:flex;gap:10px;flex-wrap:wrap;}
+  .judges-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px;margin-bottom:24px;}
+  .judge-card{background:var(--surface2);border:2px solid var(--border);border-radius:14px;padding:18px;text-align:center;transition:all .3s;position:relative;overflow:hidden;}
+  .judge-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+  .judge-card.vc::before{background:linear-gradient(90deg,#0ea5e9,#0284c7);}
+  .judge-card.founder::before{background:linear-gradient(90deg,#8b5cf6,#7c3aed);}
+  .judge-card.customer::before{background:linear-gradient(90deg,#10b981,#059669);}
+  .judge-card.angel::before{background:linear-gradient(90deg,#f59e0b,#d97706);}
+  .judge-card.speaking{animation:speakPulse 1.5s ease-in-out infinite;border-color:var(--accent);}
+  @keyframes speakPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,.4)}50%{box-shadow:0 0 0 10px rgba(0,212,255,0)}}
+  .judge-avatar{font-size:2.5rem;margin-bottom:8px;}
+  .judge-name{font-weight:700;font-size:.9rem;margin-bottom:4px;}
+  .judge-role{font-size:.75rem;color:var(--text-muted);}
+  .judge-status{font-size:.7rem;margin-top:8px;padding:3px 10px;border-radius:20px;display:inline-block;}
+  .judge-status.waiting{background:rgba(100,116,139,.15);color:var(--text-muted);}
+  .judge-status.speaking{background:rgba(0,212,255,.15);color:var(--accent);}
+  .judge-status.done{background:rgba(16,185,129,.15);color:var(--success);}
+  .pitch-box{background:linear-gradient(135deg,rgba(0,212,255,.05),rgba(124,58,237,.05));border:1px solid rgba(0,212,255,.2);border-radius:14px;padding:24px;margin-bottom:20px;}
+  .pitch-company{font-size:1.8rem;font-weight:900;background:linear-gradient(135deg,#00d4ff,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px;}
+  .pitch-ask{font-size:1.1rem;color:var(--gold);font-weight:700;margin-bottom:16px;}
+  .pitch-label{font-size:.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:3px;}
+  .pitch-value{font-size:.95rem;margin-bottom:12px;}
+  .qa-container{display:flex;flex-direction:column;gap:14px;max-height:500px;overflow-y:auto;}
+  .qa-bubble{display:flex;gap:12px;animation:slideIn .3s ease;}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+  .qa-bubble.user-bubble{flex-direction:row-reverse;}
+  .bubble-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+  .bubble-content{max-width:75%;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px 16px;font-size:.9rem;line-height:1.5;}
+  .qa-bubble.user-bubble .bubble-content{background:linear-gradient(135deg,rgba(0,212,255,.1),rgba(124,58,237,.1));border-color:rgba(0,212,255,.3);}
+  .bubble-meta{font-size:.72rem;color:var(--text-muted);margin-bottom:4px;font-weight:600;}
+  .answer-input-area{display:flex;gap:10px;margin-top:16px;}
+  .answer-input-area textarea{min-height:60px;flex:1;}
+  .scores-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:500px){.scores-grid{grid-template-columns:1fr;}}
+  .score-item{background:var(--surface2);border-radius:12px;padding:16px;border:1px solid var(--border);}
+  .score-label{font-size:.8rem;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);margin-bottom:8px;}
+  .score-bar-wrap{background:var(--surface3);border-radius:20px;height:8px;overflow:hidden;margin-bottom:6px;}
+  .score-bar{height:100%;border-radius:20px;transition:width 1.5s cubic-bezier(.4,0,.2,1);width:0%;}
+  .score-value{font-size:1.4rem;font-weight:800;}
+  .total-score-display{text-align:center;padding:32px;background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(124,58,237,.08));border:1px solid rgba(0,212,255,.2);border-radius:20px;margin-bottom:24px;}
+  .total-label{font-size:.9rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-bottom:8px;}
+  .total-number{font-size:clamp(3rem,10vw,6rem);font-weight:900;background:linear-gradient(135deg,#00d4ff,#7c3aed,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+  .total-grade{font-size:1.1rem;color:var(--text-muted);}
+  .decision-card{border-radius:20px;padding:32px;text-align:center;margin-bottom:20px;border:2px solid;animation:pop .6s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes pop{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+  .decision-card.invest{background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(5,150,105,.08));border-color:var(--success);}
+  .decision-card.reject{background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(220,38,38,.08));border-color:var(--danger);}
+  .decision-card.acquire{background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(109,40,217,.08));border-color:var(--accent2);}
+  .decision-card.comeback{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(217,119,6,.08));border-color:var(--gold);}
+  .decision-icon{font-size:4rem;margin-bottom:12px;}
+  .decision-label{font-size:.8rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-bottom:6px;}
+  .decision-title{font-size:2rem;font-weight:900;margin-bottom:12px;}
+  .decision-val{font-size:1.1rem;color:var(--text-muted);margin-bottom:8px;}
+  .decision-val span{color:var(--gold);font-weight:700;}
+  .decision-reason{font-size:.9rem;line-height:1.6;color:var(--text-muted);max-width:600px;margin:12px auto 0;}
+  .verdicts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px;}
+  .verdict-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;}
+  .verdict-judge{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .verdict-judge-name{font-weight:700;font-size:.9rem;}
+  .verdict-text{font-size:.85rem;color:var(--text-muted);line-height:1.5;margin-bottom:10px;}
+  .verdict-badge{font-size:.8rem;font-weight:700;padding:4px 12px;border-radius:20px;display:inline-block;}
+  .verdict-badge.in{background:rgba(16,185,129,.2);color:var(--success);}
+  .verdict-badge.out{background:rgba(239,68,68,.2);color:var(--danger);}
+  .verdict-badge.maybe{background:rgba(245,158,11,.2);color:var(--gold);}
+  .lb-item{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;transition:all .2s;}
+  .lb-item:hover{border-color:var(--accent);transform:translateX(4px);}
+  .lb-item.gold{border-color:var(--gold);background:linear-gradient(90deg,rgba(245,158,11,.08),transparent);}
+  .lb-rank{font-size:1.2rem;font-weight:900;width:30px;}
+  .lb-info{flex:1;}
+  .lb-name{font-weight:700;}
+  .lb-meta{font-size:.8rem;color:var(--text-muted);}
+  .lb-score{font-size:1.4rem;font-weight:900;color:var(--accent);}
+  .lb-badge{font-size:.75rem;padding:3px 10px;border-radius:20px;font-weight:600;}
+  .lb-badge.invest{background:rgba(16,185,129,.2);color:var(--success);}
+  .lb-badge.reject{background:rgba(239,68,68,.2);color:var(--danger);}
+  .lb-badge.acquire{background:rgba(124,58,237,.2);color:var(--accent2);}
+  .lb-badge.comeback{background:rgba(245,158,11,.2);color:var(--gold);}
+  .dots{display:inline-flex;gap:4px;}
+  .dots span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:bounce 1.2s ease-in-out infinite;}
+  .dots span:nth-child(2){animation-delay:.15s;}
+  .dots span:nth-child(3){animation-delay:.3s;}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1}}
+  .stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+  .stat-chip{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:.85rem;}
+  .stat-chip strong{color:var(--accent);}
+  #confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;}
+  .toast{position:fixed;bottom:30px;right:30px;background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:14px 20px;font-size:.9rem;box-shadow:var(--glow);z-index:10000;animation:toastIn .3s ease;}
+  @keyframes toastIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  .section-title{font-size:1.4rem;font-weight:800;margin-bottom:6px;}
+  .section-sub{color:var(--text-muted);font-size:.9rem;margin-bottom:24px;}
+  .hidden{display:none!important;}
+  ::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:var(--surface);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+  footer{text-align:center;padding:32px 20px;color:var(--text-muted);font-size:.8rem;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+<canvas id="confetti-canvas"></canvas>
+<div id="app">
+<header>
+  <div class="logo">🦈 AI Shark Tank</div>
+  <div class="tagline">Pitch your idea · Face the judges · Get funded</div>
+</header>
+
+<!-- INPUT -->
+<div id="s-input" class="screen active">
+  <div class="section-title">🚀 Submit Your Pitch</div>
+  <div class="section-sub">Fill in the details below to face the sharks</div>
+  <div class="card">
+    <div class="card-title">🏢 Company Info</div>
+    <div class="form-row">
+      <div class="form-group"><label>Startup Name *</label><input id="i-name" placeholder="e.g. FlowAI"></div>
+      <div class="form-group"><label>Funding Ask *</label><input id="i-ask" placeholder="e.g. $500,000 for 10%"></div>
+    </div>
+    <div class="form-group"><label>Target Audience *</label><input id="i-audience" placeholder="e.g. Small business owners aged 25–45"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">💡 Your Idea</div>
+    <div class="form-group"><label>Problem Statement *</label><textarea id="i-problem" placeholder="What problem does your startup solve?"></textarea></div>
+    <div class="form-group"><label>Your Solution *</label><textarea id="i-solution" placeholder="How does your product solve this problem?"></textarea></div>
+    <div class="form-group"><label>Revenue Model *</label><textarea id="i-revenue" placeholder="How do you make money?" style="min-height:70px"></textarea></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🦈 Meet Your Judges</div>
+    <div class="judges-grid">
+      <div class="judge-card vc"><div class="judge-avatar">💼</div><div class="judge-name">Victoria Chase</div><div class="judge-role">Venture Capitalist</div><div class="judge-status waiting">Market &amp; Scale</div></div>
+      <div class="judge-card founder"><div class="judge-avatar">⚡</div><div class="judge-name">Marcus Reid</div><div class="judge-role">Serial Founder</div><div class="judge-status waiting">Execution</div></div>
+      <div class="judge-card customer"><div class="judge-avatar">🎯</div><div class="judge-name">Sam Torres</div><div class="judge-role">Super Customer</div><div class="judge-status waiting">Usefulness</div></div>
+      <div class="judge-card angel"><div class="judge-avatar">🌟</div><div class="judge-name">Diana Lee</div><div class="judge-role">Angel Investor</div><div class="judge-status waiting">Profitability</div></div>
+    </div>
+  </div>
+  <div style="text-align:center;padding:8px 0 40px">
+    <button class="btn btn-primary btn-lg" onclick="startPitch()">🦈 Enter the Tank</button>
+  </div>
+</div>
+
+<!-- PITCH / Q&A -->
+<div id="s-pitch" class="screen">
+  <div class="pitch-box" id="pitch-box"></div>
+  <div class="judges-grid" id="judges-row"></div>
+  <div class="card">
+    <div class="card-title">💬 Q&amp;A Round</div>
+    <div class="qa-container" id="qa-list"></div>
+    <div class="answer-input-area hidden" id="ans-area">
+      <textarea id="ans-input" placeholder="Your answer... (Ctrl+Enter to send)" rows="3"></textarea>
+      <button class="btn btn-primary" onclick="submitAns()">Send</button>
+    </div>
+    <div class="hidden" id="score-btn-area" style="margin-top:16px;text-align:center">
+      <button class="btn btn-success btn-lg" onclick="goScore()">🏆 See My Score</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCORING -->
+<div id="s-score" class="screen">
+  <div class="section-title">📊 Pitch Scorecard</div>
+  <div class="section-sub" id="score-sub"></div>
+  <div class="total-score-display">
+    <div class="total-label">Overall Score</div>
+    <div class="total-number" id="total-num">—</div>
+    <div class="total-grade" id="total-grade">Calculating...</div>
+  </div>
+  <div class="scores-grid" id="scores-grid"></div>
+  <div class="card" style="margin-top:20px">
+    <div class="card-title">🦈 Judge Verdicts</div>
+    <div class="verdicts-grid" id="verdicts"></div>
+  </div>
+  <div style="text-align:center;margin:20px 0 40px">
+    <button class="btn btn-primary btn-lg" onclick="goDecision()">💰 See Investment Decision</button>
+  </div>
+</div>
+
+<!-- DECISION -->
+<div id="s-decision" class="screen">
+  <div class="section-title">💰 The Sharks Decide</div>
+  <div class="section-sub">After a tense deliberation...</div>
+  <div id="dec-card"></div>
+  <div class="verdicts-grid" id="dec-judges"></div>
+  <div class="card"><div class="card-title">📈 Deal Details</div><div id="deal-details"></div></div>
+  <div class="btn-group" style="justify-content:center;margin-bottom:24px">
+    <button class="btn btn-primary" onclick="dlPDF()">📄 Download Report</button>
+    <button class="btn btn-secondary" onclick="shareIt()">🔗 Share</button>
+    <button class="btn btn-secondary" onclick="goLB()">🏆 Leaderboard</button>
+    <button class="btn btn-secondary" onclick="reset()">🔄 Pitch Again</button>
+  </div>
+</div>
+
+<!-- LEADERBOARD -->
+<div id="s-lb" class="screen">
+  <div class="section-title">🏆 Hall of Sharks</div>
+  <div class="section-sub">Top pitches this session</div>
+  <div id="lb-list"></div>
+  <div style="text-align:center;margin-top:20px">
+    <button class="btn btn-primary" onclick="reset()">🦈 New Pitch</button>
+    <button class="btn btn-secondary" onclick="go('s-decision')" style="margin-left:10px">← Back</button>
+  </div>
+</div>
+</div>
+<footer>🦈 AI Shark Tank Simulator · Powered by Claude · For entertainment only</footer>
+
+<script>
+const JUDGES=[
+  {id:'vc',name:'Victoria Chase',role:'Venture Capitalist',av:'💼',focus:'market size and scalability',col:'#0ea5e9',
+   qs:[p=>`What's your total addressable market?`,p=>`What stops Google from copying ${p.name} in 6 months?`,p=>`Path to $100M ARR in 5 years?`,p=>`What's your CAC and LTV?`,p=>`Why is NOW the right time?`],
+   react:s=>s>70?"The market opportunity is real. I'd want to dig into the unit economics.":"The market size concerns me. I need a clearer path to scale.",
+   verd:s=>s>72?'in':s>50?'maybe':'out'},
+  {id:'founder',name:'Marcus Reid',role:'Serial Founder',av:'⚡',focus:'execution ability',col:'#8b5cf6',
+   qs:[p=>`Have you shipped anything yet?`,p=>`Biggest mistake building ${p.name} so far?`,p=>`Why are YOU the right person to win this market?`,p=>`First 90 days with this investment?`,p=>`Who's on your team? Biggest skill gap?`],
+   react:s=>s>70?"Execution matters more than ideas. Your answers show you've got it.":"Great ideas die from poor execution. I'm not convinced you can pull this off.",
+   verd:s=>s>68?'in':s>45?'maybe':'out'},
+  {id:'customer',name:'Sam Torres',role:'Super Customer',av:'🎯',focus:'real-world usefulness',col:'#10b981',
+   qs:[p=>`Walk me through my first 5 minutes using ${p.name}.`,p=>`My life before vs after your product?`,p=>`#1 reason someone stops using ${p.name}?`,p=>`Talked to 100 real customers? What surprised you?`,p=>`How does ${p.name} become a daily habit?`],
+   react:s=>s>70?"This genuinely solves something I'd pay for. The user journey makes sense.":"I'm not sold on the daily use case. Why would a busy person bother?",
+   verd:s=>s>65?'in':s>45?'maybe':'out'},
+  {id:'angel',name:'Diana Lee',role:'Angel Investor',av:'🌟',focus:'profitability and ROI',col:'#f59e0b',
+   qs:[p=>`When do you hit profitability? Current burn rate?`,p=>`Walk me through your margin structure.`,p=>`Exit strategy — who buys ${p.name}?`,p=>`Traction so far — MRR, users, growth rate?`,p=>`Cut 50% of expenses tomorrow — what survives?`],
+   react:s=>s>70?"Business model is sound, return profile attractive. Clear path to exit.":"I love the vision but the profitability story needs serious work.",
+   verd:s=>s>70?'in':s>50?'maybe':'out'}
+];
+const CATS=[
+  {k:'market',l:'Market Potential',c:'#0ea5e9',i:'📈'},
+  {k:'innovation',l:'Innovation',c:'#8b5cf6',i:'💡'},
+  {k:'business',l:'Business Model',c:'#f59e0b',i:'💰'},
+  {k:'execution',l:'Execution',c:'#10b981',i:'⚡'},
+  {k:'investment',l:'Investment Worthiness',c:'#ef4444',i:'🏆'}
+];
+let ST={pitch:{},ji:0,qi:0,answers:{},scores:{},jScores:{},verd:{},dec:null,total:0,allQA:[],lb:JSON.parse(localStorage.getItem('stlb')||'[]')};
+const $=id=>document.getElementById(id);
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}
+function toast(m){const e=document.createElement('div');e.className='toast';e.textContent=m;document.body.appendChild(e);setTimeout(()=>e.remove(),3000);}
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+function rgb(h){return`${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)}`;}
+function genScores(p){
+  const q=(p.problem.length+p.solution.length+p.revenue.length)/3,b=clamp(q/20,0,15);
+  const market=clamp(rnd(45,90)+b*.5,30,98),innovation=clamp(rnd(40,92)+b*.4,25,98),
+        business=clamp(rnd(38,88)+b*.6,25,95),execution=clamp(rnd(42,85)+b*.3,28,95);
+  const investment=clamp((market*.3+innovation*.2+business*.3+execution*.2)+rnd(-5,5),25,98);
+  return{market,innovation,business,execution,investment};
+}
+function getTotal(s){return Math.round(s.market*.25+s.innovation*.2+s.business*.25+s.execution*.15+s.investment*.15);}
+function grade(s){return s>=90?'🔥 Exceptional — Unicorn Material':s>=80?'⭐ Outstanding — Strong Investment Case':s>=70?'✅ Solid — Worth Serious Consideration':s>=60?'🤔 Promising — Needs Refinement':s>=50?'⚠️ Risky — Major Questions Remain':'❌ Weak — Back to Drawing Board';}
+function getDec(t){return t>=78?'invest':t>=72?'acquire':t>=55?'comeback':'reject';}
+function getVal(p,t){
+  const s=p.ask.replace(/[^0-9.kmb]/gi,'').toLowerCase();let base=parseFloat(s)||500000;
+  if(s.includes('m'))base*=1e6;else if(s.includes('k'))base*=1000;else if(s.includes('b'))base*=1e9;
+  const v=base*clamp(2+(t-50)/10,.5,8);
+  return v>=1e9?`$${(v/1e9).toFixed(1)}B`:v>=1e6?`$${(v/1e6).toFixed(1)}M`:`$${(v/1000).toFixed(0)}K`;
+}
+function decDetails(dec,total,p){
+  const val=getVal(p,total);
+  return{
+    invest:{icon:'💰',label:'DEAL REACHED',title:"We're In!",cls:'invest',val,reason:`The sharks see a clear path to returns. ${p.name} demonstrates strong market potential and execution ability. The ask is reasonable and the team shows the right instincts. The sharks are writing the check.`},
+    acquire:{icon:'🤝',label:'ACQUISITION OFFER',title:'We Want to Buy You',cls:'acquire',val,reason:`Rather than invest, the sharks believe ${p.name} would be more valuable folded into an existing portfolio company. The tech is strong but the standalone model needs more development.`},
+    comeback:{icon:'⏳',label:'CONDITIONAL INTEREST',title:'Come Back Later',cls:'comeback',val:val+' (projected)',reason:`${p.name} shows promise but isn't investment-ready. The sharks want: proof of revenue, clearer unit economics, stronger team. Nail these and there's a deal on the table.`},
+    reject:{icon:'🦈',label:'NO DEAL',title:"I'm Out",cls:'reject',val:'N/A',reason:`The sharks pass on ${p.name}. Market size, business model clarity, and execution risk are too significant right now. Many great companies were rejected early — keep iterating.`}
+  }[dec];
+}
+function judgeVerdict(j,score,p){
+  const v=j.verd(score);
+  const phrases={
+    in:[`After reviewing ${p.name}'s pitch, I'm impressed. The ${j.focus} story is compelling. I'm in.`,`${p.name} checks my key boxes. Strong ${j.focus} and a credible path forward.`],
+    maybe:[`I see potential but my concerns around ${j.focus} are real. I'd consider a smaller check with milestones.`,`There's something here but I need more proof on ${j.focus}. Come back in 6 months.`],
+    out:[`${p.name}'s ${j.focus} story doesn't add up for me. I'm out.`,`Until the ${j.focus} questions are answered, I can't invest. I'm out.`]
+  }[v];
+  return phrases[Math.floor(Math.random()*phrases.length)];
+}
+function startPitch(){
+  const name=$('i-name').value.trim(),ask=$('i-ask').value.trim(),audience=$('i-audience').value.trim(),
+        problem=$('i-problem').value.trim(),solution=$('i-solution').value.trim(),revenue=$('i-revenue').value.trim();
+  if(!name||!ask||!audience||!problem||!solution||!revenue){toast('⚠️ Please fill all fields!');return;}
+  ST.pitch={name,ask,audience,problem,solution,revenue};
+  ST.ji=0;ST.qi=0;ST.answers={};
+  ST.allQA=JUDGES.map(j=>{
+    const pool=j.qs,q1=pool[Math.floor(Math.random()*pool.length)](ST.pitch);
+    const rest=pool.filter(q=>q(ST.pitch)!==q1);
+    const q2=(rest.length?rest[Math.floor(Math.random()*rest.length)]:pool[0])(ST.pitch);
+    return[q1,q2];
+  });
+  renderPitch();go('s-pitch');setTimeout(nextQ,600);
+}
+function renderPitch(){
+  const p=ST.pitch;
+  $('pitch-box').innerHTML=`<div class="pitch-company">${p.name}</div><div class="pitch-ask">Asking ${p.ask}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><div class="pitch-label">🎯 Target Audience</div><div class="pitch-value">${p.audience}</div></div><div><div class="pitch-label">💰 Revenue</div><div class="pitch-value">${p.revenue}</div></div><div><div class="pitch-label">❗ Problem</div><div class="pitch-value">${p.problem}</div></div><div><div class="pitch-label">✅ Solution</div><div class="pitch-value">${p.solution}</div></div></div>`;
+  $('judges-row').innerHTML=JUDGES.map((j,i)=>`<div class="judge-card ${j.id}" id="jc${i}"><div class="judge-avatar">${j.av}</div><div class="judge-name">${j.name}</div><div class="judge-role">${j.role}</div><div class="judge-status waiting" id="js${i}">Waiting...</div></div>`).join('');
+}
+function nextQ(){
+  if(ST.ji>=JUDGES.length){$('ans-area').classList.add('hidden');$('score-btn-area').classList.remove('hidden');return;}
+  const j=JUDGES[ST.ji],q=ST.allQA[ST.ji][ST.qi];
+  JUDGES.forEach((_,i)=>{$(`jc${i}`).classList.remove('speaking');const s=$(`js${i}`);s.className='judge-status '+(i<ST.ji?'done':i===ST.ji?'speaking':'waiting');s.textContent=i<ST.ji?'Done ✓':i===ST.ji?'Speaking...':'Waiting...';});
+  $(`jc${ST.ji}`).classList.add('speaking');
+  const td=document.createElement('div');td.className='qa-bubble';td.id='typing';
+  td.innerHTML=`<div class="bubble-avatar" style="background:rgba(${rgb(j.col)},.15)">${j.av}</div><div><div class="bubble-meta">${j.name} · ${j.role}</div><div style="padding:10px 16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);display:flex;align-items:center;gap:8px;width:fit-content"><div class="dots"><span></span><span></span><span></span></div><span style="font-size:.82rem;color:var(--text-muted)">thinking...</span></div></div>`;
+  $('qa-list').appendChild(td);scrollDown();
+  setTimeout(()=>{
+    td.remove();
+    const b=document.createElement('div');b.className='qa-bubble';
+    b.innerHTML=`<div class="bubble-avatar" style="background:rgba(${rgb(j.col)},.15)">${j.av}</div><div><div class="bubble-meta">${j.name} · ${j.role}</div><div class="bubble-content">${q}</div></div>`;
+    $('qa-list').appendChild(b);scrollDown();
+    $('ans-input').value='';$('ans-area').classList.remove('hidden');$('ans-input').focus();
+  },1000+Math.random()*700);
+}
+function submitAns(){
+  const ans=$('ans-input').value.trim();
+  if(!ans){toast('Please type your answer!');return;}
+  const ji=ST.ji,qi=ST.qi,j=JUDGES[ji];
+  if(!ST.answers[ji])ST.answers[ji]=[];ST.answers[ji][qi]=ans;
+  $('ans-area').classList.add('hidden');
+  const ub=document.createElement('div');ub.className='qa-bubble user-bubble';
+  ub.innerHTML=`<div class="bubble-avatar" style="background:linear-gradient(135deg,rgba(0,212,255,.2),rgba(124,58,237,.2))">👤</div><div><div class="bubble-meta" style="text-align:right">You</div><div class="bubble-content">${ans}</div></div>`;
+  $('qa-list').appendChild(ub);scrollDown();
+  if(qi===1){
+    setTimeout(()=>{
+      const rb=document.createElement('div');rb.className='qa-bubble';
+      rb.innerHTML=`<div class="bubble-avatar" style="background:rgba(${rgb(j.col)},.15)">${j.av}</div><div><div class="bubble-meta">${j.name}</div><div class="bubble-content" style="border-left:3px solid ${j.col};font-style:italic;color:var(--text-muted)">"${j.react(rnd(40,95))}"</div></div>`;
+      $('qa-list').appendChild(rb);scrollDown();
+      $(`js${ji}`).className='judge-status done';$(`js${ji}`).textContent='Done ✓';$(`jc${ji}`).classList.remove('speaking');
+      ST.ji++;ST.qi=0;setTimeout(nextQ,800);
+    },700);
+  }else{ST.qi++;setTimeout(nextQ,400);}
+}
+function scrollDown(){const c=$('qa-list');c.scrollTop=c.scrollHeight;window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});}
+function goScore(){
+  ST.scores=genScores(ST.pitch);ST.total=getTotal(ST.scores);
+  ST.jScores={};ST.verd={};
+  JUDGES.forEach(j=>{const s=clamp(rnd(40,95)+(ST.total-60)*.2,30,98);ST.jScores[j.id]=Math.round(s);ST.verd[j.id]=j.verd(s);});
+  $('score-sub').textContent=`${ST.pitch.name} — Final Results`;
+  $('scores-grid').innerHTML=CATS.map(c=>`<div class="score-item"><div class="score-label">${c.i} ${c.l}</div><div class="score-bar-wrap"><div class="score-bar" id="bar-${c.k}" style="background:${c.c}"></div></div><div class="score-value" id="val-${c.k}" style="color:${c.c}">0</div></div>`).join('');
+  $('verdicts').innerHTML=JUDGES.map(j=>{const s=ST.jScores[j.id],v=ST.verd[j.id],vl=v==='in'?'✅ IN':v==='maybe'?'🤔 MAYBE':'❌ OUT';return`<div class="verdict-card"><div class="verdict-judge"><div style="font-size:1.5rem">${j.av}</div><div><div class="verdict-judge-name">${j.name}</div><div style="font-size:.75rem;color:var(--text-muted)">${j.role}</div></div></div><div class="verdict-text">"${judgeVerdict(j,s,ST.pitch)}"</div><div class="verdict-badge ${v}">${vl}</div></div>`;}).join('');
+  go('s-score');animScores();
+}
+function animScores(){
+  let c=0;const t=ST.total,dur=1800,s=Date.now();
+  const tick=()=>{const el=Date.now()-s,pct=Math.min(el/dur,1),ease=1-Math.pow(1-pct,3);c=Math.round(ease*t);$('total-num').textContent=c;if(pct<1)requestAnimationFrame(tick);else{$('total-num').textContent=t;$('total-grade').textContent=grade(t);}};
+  requestAnimationFrame(tick);
+  CATS.forEach((cat,i)=>setTimeout(()=>{const v=Math.round(ST.scores[cat.k]);$(`bar-${cat.k}`).style.width=v+'%';let n=0;const ti=setInterval(()=>{n=Math.min(n+2,v);$(`val-${cat.k}`).textContent=n;if(n>=v)clearInterval(ti);},20);},i*100));
+}
+function goDecision(){
+  const dec=getDec(ST.total);ST.dec=dec;const d=decDetails(dec,ST.total,ST.pitch);
+  const entry={name:ST.pitch.name,ask:ST.pitch.ask,score:ST.total,decision:dec,date:new Date().toLocaleDateString()};
+  ST.lb.push(entry);ST.lb.sort((a,b)=>b.score-a.score);ST.lb=ST.lb.slice(0,10);localStorage.setItem('stlb',JSON.stringify(ST.lb));
+  $('dec-card').innerHTML=`<div class="decision-card ${d.cls}"><div class="decision-icon">${d.icon}</div><div class="decision-label">${d.label}</div><div class="decision-title">${d.title}</div><div class="decision-val">Suggested Valuation: <span>${d.val}</span></div><div class="decision-reason">${d.reason}</div></div>`;
+  $('dec-judges').innerHTML=JUDGES.map(j=>{const v=ST.verd[j.id],vl=v==='in'?'✅ IN':v==='maybe'?'🤔 MAYBE':'❌ OUT';return`<div class="verdict-card"><div class="verdict-judge"><div style="font-size:1.5rem">${j.av}</div><div><div class="verdict-judge-name">${j.name}</div><div class="verdict-badge ${v}" style="margin-top:4px">${vl}</div></div></div></div>`;}).join('');
+  const p=ST.pitch;
+  $('deal-details').innerHTML=`<div class="stat-row"><div class="stat-chip">Company: <strong>${p.name}</strong></div><div class="stat-chip">Ask: <strong>${p.ask}</strong></div><div class="stat-chip">Score: <strong>${ST.total}/100</strong></div><div class="stat-chip">Decision: <strong>${d.title}</strong></div></div><div class="stat-row">${CATS.map(c=>`<div class="stat-chip">${c.i} ${c.l}: <strong>${Math.round(ST.scores[c.k])}</strong></div>`).join('')}</div>`;
+  go('s-decision');if(dec==='invest')setTimeout(confetti,500);
+}
+function confetti(){
+  const cv=$('confetti-canvas'),ctx=cv.getContext('2d');cv.width=window.innerWidth;cv.height=window.innerHeight;
+  const cols=['#00d4ff','#7c3aed','#f59e0b','#10b981','#ef4444','#fff'];
+  const ps=Array.from({length:120},()=>({x:Math.random()*cv.width,y:-10,r:rnd(4,10),col:cols[Math.floor(Math.random()*cols.length)],vx:rnd(-3,3),vy:rnd(3,8),a:Math.random()*360,av:rnd(-3,3),sh:Math.random()>.5}));
+  let fr=0;
+  const anim=()=>{ctx.clearRect(0,0,cv.width,cv.height);ps.forEach(p=>{ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a*Math.PI/180);ctx.fillStyle=p.col;ctx.globalAlpha=Math.max(0,1-fr/180);if(p.sh)ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r);else{ctx.beginPath();ctx.arc(0,0,p.r,0,Math.PI*2);ctx.fill();}ctx.restore();p.x+=p.vx;p.y+=p.vy;p.vy+=.1;p.a+=p.av;});fr++;if(fr<200)requestAnimationFrame(anim);else ctx.clearRect(0,0,cv.width,cv.height);};
+  requestAnimationFrame(anim);
+}
+async function dlPDF(){
+  toast('📄 Generating PDF...');
+  try{
+    const{jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'}),p=ST.pitch,t=ST.total,dec=getDec(t),d=decDetails(dec,t,p);
+    doc.setFillColor(10,10,15);doc.rect(0,0,210,297,'F');
+    doc.setFillColor(0,212,255);doc.rect(0,0,210,2,'F');
+    doc.setFontSize(22);doc.setFont('helvetica','bold');doc.setTextColor(0,212,255);doc.text('AI SHARK TANK PITCH REPORT',20,20);
+    doc.setFontSize(10);doc.setTextColor(100,116,139);doc.text(`Generated: ${new Date().toLocaleDateString()}`,20,28);
+    doc.setDrawColor(45,45,69);doc.line(20,32,190,32);
+    doc.setFontSize(18);doc.setFont('helvetica','bold');doc.setTextColor(230,230,255);doc.text(p.name,20,44);
+    doc.setFontSize(12);doc.setTextColor(245,158,11);doc.text(`Asking: ${p.ask}`,20,52);
+    let y=62;
+    const ws=(label,val,yy)=>{doc.setFontSize(8);doc.setTextColor(100,116,139);doc.setFont('helvetica','bold');doc.text(label.toUpperCase(),20,yy);doc.setFontSize(10);doc.setTextColor(200,210,230);doc.setFont('helvetica','normal');const lines=doc.splitTextToSize(val,165);doc.text(lines,20,yy+5);return yy+5+lines.length*5+4;};
+    y=ws('Target Audience',p.audience,y);y=ws('Problem',p.problem,y);y=ws('Solution',p.solution,y);y=ws('Revenue Model',p.revenue,y);
+    y+=4;doc.setDrawColor(45,45,69);doc.line(20,y,190,y);y+=8;
+    doc.setFontSize(13);doc.setFont('helvetica','bold');doc.setTextColor(0,212,255);doc.text('SCORECARD',20,y);y+=8;
+    CATS.forEach(cat=>{const v=Math.round(ST.scores[cat.k]);doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(180,180,200);doc.text(cat.l,20,y);doc.setFont('helvetica','bold');doc.setTextColor(0,212,255);doc.text(`${v}/100`,165,y,{align:'right'});doc.setFillColor(34,34,58);doc.rect(20,y+1,130,3,'F');doc.setFillColor(0,212,255);doc.rect(20,y+1,130*v/100,3,'F');y+=10;});
+    y+=4;doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(0,212,255);doc.text(`OVERALL SCORE: ${t}/100`,20,y);y+=8;
+    doc.setFontSize(9);doc.setTextColor(150,150,170);doc.text(grade(t).replace(/[^\x00-\x7F]/g,'').trim(),20,y);y+=14;
+    doc.setDrawColor(45,45,69);doc.line(20,y,190,y);y+=8;
+    doc.setFontSize(13);doc.setFont('helvetica','bold');doc.setTextColor(0,212,255);doc.text('INVESTMENT DECISION',20,y);y+=8;
+    const dc={invest:[16,185,129],reject:[239,68,68],acquire:[124,58,237],comeback:[245,158,11]}[dec];
+    doc.setFontSize(15);doc.setTextColor(dc[0],dc[1],dc[2]);doc.text(d.title.toUpperCase(),20,y);y+=8;
+    doc.setFontSize(9);doc.setTextColor(245,158,11);doc.text(`Valuation: ${d.val}`,20,y);y+=7;
+    doc.setFont('helvetica','normal');doc.setTextColor(180,180,200);const rl=doc.splitTextToSize(d.reason,165);doc.text(rl,20,y);
+    doc.setFontSize(8);doc.setTextColor(60,60,90);doc.text('AI Shark Tank Simulator - For entertainment purposes only',105,290,{align:'center'});
+    doc.save(`${p.name.replace(/\s+/g,'-')}-SharkTank.pdf`);toast('✅ PDF downloaded!');
+  }catch(e){console.error(e);toast('❌ PDF failed.');}
+}
+function shareIt(){
+  const p=ST.pitch,d=decDetails(ST.dec,ST.total,p);
+  const txt=`I pitched "${p.name}" on AI Shark Tank!\nScore: ${ST.total}/100\nDecision: ${d.title}\nValuation: ${d.val}`;
+  if(navigator.share)navigator.share({title:'AI Shark Tank',text:txt}).catch(()=>{navigator.clipboard.writeText(txt);toast('📋 Copied!');});
+  else{navigator.clipboard.writeText(txt);toast('📋 Copied to clipboard!');}
+}
+function goLB(){
+  const medals=['🥇','🥈','🥉'],dl={invest:'✅ Funded',reject:'❌ Rejected',acquire:'🤝 Acquired',comeback:'⏳ Come Back'};
+  $('lb-list').innerHTML=ST.lb.length===0?`<div style="text-align:center;padding:40px;color:var(--text-muted)">No pitches yet!</div>`:ST.lb.map((e,i)=>`<div class="lb-item ${i===0?'gold':''}"><div class="lb-rank">${medals[i]||'#'+(i+1)}</div><div class="lb-info"><div class="lb-name">${e.name}</div><div class="lb-meta">Ask: ${e.ask} · ${e.date}</div></div><div style="display:flex;align-items:center;gap:10px"><span class="lb-badge ${e.decision}">${dl[e.decision]}</span><div class="lb-score">${e.score}</div></div></div>`).join('');
+  go('s-lb');
+}
+function reset(){
+  ST.pitch={};ST.ji=0;ST.qi=0;ST.answers={};ST.scores={};ST.total=0;ST.dec=null;
+  ['i-name','i-ask','i-audience','i-problem','i-solution','i-revenue'].forEach(id=>$(id)&&($(id).value=''));
+  $('qa-list').innerHTML='';go('s-input');
+}
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='Enter'){const a=$('ans-area');if(a&&!a.classList.contains('hidden'))submitAns();}});
+</script>
+</body>
+</html>
