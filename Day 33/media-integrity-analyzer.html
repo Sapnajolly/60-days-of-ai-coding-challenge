@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Media Integrity Analyzer</title>
+<style>
+  :root {
+    --accent: #10b981;
+    --accent2: #34d399;
+    --accent3: #6ee7b7;
+    --accent-dim: rgba(16,185,129,0.12);
+    --accent-glow: rgba(16,185,129,0.25);
+    --bg: #0a0f0d;
+    --bg2: #0f1a14;
+    --bg3: #142019;
+    --card: #111c16;
+    --card2: #162318;
+    --border: rgba(16,185,129,0.18);
+    --border2: rgba(16,185,129,0.08);
+    --text: #e8f5ef;
+    --text2: #9eb8a8;
+    --text3: #6b8a78;
+    --danger: #f87171;
+    --warn: #fbbf24;
+    --safe: #34d399;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* ───── Noise texture overlay ───── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+  /* ───── Layout ───── */
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 20px 80px; position: relative; z-index: 1; }
+  /* ───── Header ───── */
+  header {
+    text-align: center;
+    padding: 56px 20px 40px;
+    position: relative;
+  }
+  .logo-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent-dim);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 18px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 28px;
+  }
+  .logo-dot { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.85)} }
+  header h1 {
+    font-size: clamp(28px, 5vw, 46px);
+    font-weight: 400;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+  header h1 span { color: var(--accent); }
+  header p {
+    color: var(--text2);
+    font-size: 16px;
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+  /* ───── Progress bar ───── */
+  .progress-track {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 36px 0 44px;
+    padding: 18px 22px;
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+  }
+  .step-pip {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    color: var(--text3);
+    flex-shrink: 0;
+    transition: all 0.4s ease;
+  }
+  .step-pip.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+  .step-pip.done { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .step-line { flex: 1; height: 2px; background: var(--border2); transition: background 0.4s; }
+  .step-line.done { background: var(--accent); }
+  .step-label { font-size: 12px; color: var(--text3); font-family: 'Courier New', monospace; margin-left: 6px; }
+  /* ───── Live Metrics Strip ───── */
+  .metrics-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 30px;
+  }
+  @media(max-width:600px){ .metrics-strip{ grid-template-columns: repeat(2,1fr); } }
+  .metric-card {
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    transition: border-color 0.3s;
+  }
+  .metric-card:hover { border-color: var(--border); }
+  .metric-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'Courier New',monospace; color: var(--text3); margin-bottom: 8px; }
+  .metric-bar-bg { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+  .metric-bar { height: 100%; width: 0%; border-radius: 2px; transition: width 1.2s cubic-bezier(.4,0,.2,1), background 0.5s; }
+  .metric-val { font-size: 20px; font-family: 'Courier New',monospace; color: var(--text); }
+  .metric-val span { font-size: 11px; color: var(--text3); }
+  /* ───── Cards ───── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 20px;
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.3s;
+  }
+  .card.visible { opacity: 1; transform: translateY(0); }
+  .card:hover { border-color: var(--border); }
+  .card-tag {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Courier New',monospace;
+    color: var(--accent2);
+    background: var(--accent-dim);
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 18px;
+  }
+  .card h2 { font-size: 22px; font-weight: 400; margin-bottom: 12px; line-height: 1.3; }
+  .card p { color: var(--text2); line-height: 1.75; font-size: 15px; }
+  /* ───── Concept intro ───── */
+  .concept-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 22px 26px;
+    margin: 22px 0;
+  }
+  .concept-box .concept-title { font-family:'Courier New',monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--accent); margin-bottom:10px; }
+  .concept-box p { color: var(--text2); font-size: 14px; line-height: 1.75; }
+  .concept-box strong { color: var(--text); }
+  /* ───── Scenario content ───── */
+  .scenario-headline {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text);
+    font-family: Georgia, serif;
+    margin-bottom: 16px;
+    padding: 20px 22px;
+    background: var(--bg3);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  .scenario-body {
+    color: var(--text2);
+    font-size: 14px;
+    line-height: 1.8;
+    padding: 20px 22px;
+    background: var(--card2);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border2);
+    margin-bottom: 22px;
+  }
+  .scenario-meta { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+  .meta-chip { font-size:11px; font-family:'Courier New',monospace; padding:4px 12px; border-radius:999px; background:var(--bg3); border:1px solid var(--border2); color:var(--text3); }
+  /* ───── Question area ───── */
+  .q-label { font-size:13px; letter-spacing:.5px; color:var(--text2); margin-bottom:12px; font-style:italic; }
+  .btn-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px; }
+  .btn {
+    padding: 11px 24px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-size: 14px;
+    font-family: Georgia, serif;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .btn.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); box-shadow: 0 0 16px var(--accent-glow); }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    font-weight: 600;
+    padding: 12px 30px;
+  }
+  .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); color: var(--bg); box-shadow: 0 4px 20px var(--accent-glow); }
+  .btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
+  .btn-ghost { border-color: var(--border2); color: var(--text3); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  /* ───── Textarea / input ───── */
+  .text-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: Georgia, serif;
+    font-size: 14px;
+    padding: 14px 16px;
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+    transition: border-color 0.25s;
+    margin-bottom: 16px;
+  }
+  .text-input:focus { border-color: var(--accent); }
+  .text-input::placeholder { color: var(--text3); }
+  /* ───── Reveal section ───── */
+  .reveal-section { display:none; }
+  .reveal-section.shown { display:block; }
+  .reveal-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border2);
+  }
+  .score-ring {
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Courier New',monospace;
+    font-size: 20px;
+    font-weight: bold;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .score-ring svg { position:absolute; top:0;left:0; transform:rotate(-90deg); }
+  .score-ring .ring-val { position:relative; z-index:1; }
+  .highlight-bad { background: rgba(248,113,113,0.15); color: var(--danger); padding: 2px 6px; border-radius: 4px; border-bottom: 2px solid var(--danger); }
+  .highlight-warn { background: rgba(251,191,36,0.15); color: var(--warn); padding: 2px 6px; border-radius: 4px; border-bottom: 2px solid var(--warn); }
+  .highlight-emotion { background: rgba(139,92,246,0.18); color: #c084fc; padding: 2px 6px; border-radius: 4px; border-bottom: 2px dashed #a855f7; }
+  .reveal-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:18px; }
+  @media(max-width:600px){.reveal-grid{grid-template-columns:1fr;}}
+  .reveal-tile {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+  }
+  .reveal-tile .rt-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; font-family:'Courier New',monospace; color:var(--text3); margin-bottom:8px; }
+  .reveal-tile .rt-val { font-size:14px; color:var(--text); line-height:1.6; }
+  .reveal-tile .rt-val.good { color:var(--safe); }
+  .reveal-tile .rt-val.bad { color:var(--danger); }
+  .reveal-tile .rt-val.warn { color:var(--warn); }
+  .rewrite-box {
+    background: rgba(16,185,129,0.06);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 18px 20px;
+    margin-top:16px;
+  }
+  .rewrite-box .rw-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; font-family:'Courier New',monospace; color:var(--accent); margin-bottom:10px; }
+  .rewrite-box p { color:var(--text); font-size:15px; line-height:1.6; font-style:italic; }
+  .takeaway-box {
+    background: var(--accent-dim);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 18px 20px;
+    margin-top:16px;
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+  }
+  .takeaway-icon { font-size:22px; flex-shrink:0; margin-top:2px; }
+  .takeaway-box p { color: var(--text2); font-size:14px; line-height:1.7; }
+  .takeaway-box strong { color:var(--accent2); }
+  /* ───── Emotion chips ───── */
+  .emotion-grid { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+  .emotion-chip {
+    padding:8px 18px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:transparent;
+    color:var(--text2);
+    font-size:13px;
+    cursor:pointer;
+    transition:all 0.2s;
+    font-family:Georgia,serif;
+  }
+  .emotion-chip:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+  .emotion-chip.sel { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); box-shadow:0 0 10px var(--accent-glow); }
+  /* ───── Dashboard ───── */
+  .dash-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:24px; }
+  @media(max-width:600px){.dash-grid{grid-template-columns:1fr;}}
+  .dash-tile {
+    background:var(--bg3);
+    border:1px solid var(--border2);
+    border-radius:var(--radius-sm);
+    padding:20px 22px;
+  }
+  .dash-tile h4 { font-size:11px; letter-spacing:2px; text-transform:uppercase; font-family:'Courier New',monospace; color:var(--text3); margin-bottom:12px; }
+  .dash-tile p, .dash-tile li { font-size:14px; color:var(--text2); line-height:1.7; }
+  .dash-tile ul { list-style:none; }
+  .dash-tile li::before { content:'→ '; color:var(--accent); }
+  .big-score-wrap { text-align:center; padding:30px 20px; background:var(--card2); border-radius:var(--radius); border:1px solid var(--border); margin-bottom:20px; }
+  .big-score-num { font-size:72px; font-family:'Courier New',monospace; color:var(--accent); line-height:1; }
+  .big-score-label { font-size:13px; color:var(--text3); letter-spacing:2px; text-transform:uppercase; font-family:'Courier New',monospace; margin-top:8px; }
+  .big-score-bar-bg { height:6px; background:var(--bg3); border-radius:3px; margin:16px auto 0; max-width:300px; overflow:hidden; }
+  .big-score-bar { height:100%; border-radius:3px; transition:width 1.5s cubic-bezier(.4,0,.2,1); }
+  /* ───── Divider ───── */
+  .divider { border:none; border-top:1px solid var(--border2); margin:28px 0; }
+  /* ───── Utility ───── */
+  .hidden { display:none !important; }
+  .fade-in { animation: fadeIn 0.5s ease forwards; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+  .mt-4 { margin-top: 16px; }
+  .mt-6 { margin-top: 24px; }
+  footer { text-align:center; padding:30px; color:var(--text3); font-size:12px; font-family:'Courier New',monospace; letter-spacing:1px; }
+  /* ───── Scrollbar ───── */
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <div class="logo-pill"><span class="logo-dot"></span>Media Integrity Lab</div>
+  <h1>Media <span>Integrity</span> Analyzer</h1>
+  <p>Learn to read media critically — through discovery, not quizzes. Each challenge reveals how headlines, emotions, and framing shape what you believe.</p>
+</header>
+
+<!-- ═══ PROGRESS ═══ -->
+<div class="progress-track">
+  <div class="step-pip active" id="pip1">1</div>
+  <div class="step-line" id="line1"></div>
+  <div class="step-pip" id="pip2">2</div>
+  <div class="step-line" id="line2"></div>
+  <div class="step-pip" id="pip3">3</div>
+  <span class="step-label" id="step-label-text">Headline Detective</span>
+</div>
+
+<!-- ═══ LIVE METRICS ═══ -->
+<div class="metrics-strip">
+  <div class="metric-card">
+    <div class="metric-label">Headline Accuracy</div>
+    <div class="metric-bar-bg"><div class="metric-bar" id="bar-accuracy" style="background:var(--accent)"></div></div>
+    <div class="metric-val" id="val-accuracy">—<span> /100</span></div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Source Reliability</div>
+    <div class="metric-bar-bg"><div class="metric-bar" id="bar-reliability" style="background:var(--accent)"></div></div>
+    <div class="metric-val" id="val-reliability">—<span> /100</span></div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Emotional Manipulation</div>
+    <div class="metric-bar-bg"><div class="metric-bar" id="bar-emotion" style="background:var(--warn)"></div></div>
+    <div class="metric-val" id="val-emotion">—<span> /100</span></div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Audience Targeting</div>
+    <div class="metric-bar-bg"><div class="metric-bar" id="bar-targeting" style="background:var(--accent)"></div></div>
+    <div class="metric-val" id="val-targeting">—<span> /100</span></div>
+  </div>
+</div>
+
+<!-- ═══ CHALLENGE 1 ═══ -->
+<div class="card visible" id="challenge1">
+  <div class="card-tag">Challenge 01 — Headline Detective</div>
+  <h2>Can you spot a misleading headline?</h2>
+  <p>Before we begin, here's what you need to know:</p>
+
+  <div class="concept-box">
+    <div class="concept-title">The Concept</div>
+    <p>
+      Headlines are the most powerful 10 words in journalism. They're written to <strong>stop your scroll</strong> — not necessarily to tell the truth. Studies show that <strong>59% of people share articles based on the headline alone</strong>, without reading further. Misleading headlines use techniques like omitting context, using charged words, or implying causation where there's only correlation. Knowing this can save you from being misinformed — and from spreading misinformation.
+    </p>
+  </div>
+
+  <div id="c1-scenario">
+    <div class="scenario-meta">
+      <span class="meta-chip" id="c1-outlet">Loading…</span>
+      <span class="meta-chip" id="c1-date">Today</span>
+      <span class="meta-chip" id="c1-section">News</span>
+    </div>
+    <div class="scenario-headline" id="c1-headline">Loading headline…</div>
+    <div class="scenario-body" id="c1-body">Loading article body…</div>
+  </div>
+
+  <div class="q-label">Would you click this headline?</div>
+  <div class="btn-row" id="c1-click-btns">
+    <button class="btn" onclick="c1Select('click','Yes')">✓ Yes, I'd click it</button>
+    <button class="btn" onclick="c1Select('click','Maybe')">~ Maybe</button>
+    <button class="btn" onclick="c1Select('click','No')">✗ No, seems off</button>
+  </div>
+
+  <div class="q-label">What feels exaggerated or misleading? (Write anything you notice, or just your gut feeling)</div>
+  <textarea class="text-input" id="c1-user-text" placeholder="e.g. 'The word CRISIS feels too strong' or 'I'm not sure what's being claimed exactly…'"></textarea>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="c1-reveal-btn" onclick="revealC1()" disabled>Reveal Analysis →</button>
+  </div>
+
+  <!-- REVEAL -->
+  <div class="reveal-section" id="c1-reveal">
+    <hr class="divider">
+    <div class="reveal-header">
+      <div class="score-ring" id="c1-score-ring">
+        <svg width="70" height="70" viewBox="0 0 70 70">
+          <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(16,185,129,0.12)" stroke-width="5"/>
+          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--accent)" stroke-width="5"
+            stroke-dasharray="176" stroke-dashoffset="176" id="c1-ring-arc"
+            stroke-linecap="round" style="transition:stroke-dashoffset 1.2s ease"/>
+        </svg>
+        <span class="ring-val" id="c1-score-num" style="color:var(--accent)">—</span>
+      </div>
+      <div>
+        <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;font-family:'Courier New',monospace;color:var(--text3);margin-bottom:4px;">Headline Accuracy Score</div>
+        <div style="font-size:18px;color:var(--text);" id="c1-score-label">Analyzing…</div>
+      </div>
+    </div>
+
+    <div class="q-label" style="margin-bottom:8px;">Highlighted problems in the original headline:</div>
+    <div class="scenario-headline" id="c1-annotated-headline" style="margin-bottom:16px;"></div>
+
+    <div class="reveal-grid">
+      <div class="reveal-tile">
+        <div class="rt-label">Misleading Technique</div>
+        <div class="rt-val bad" id="c1-technique"></div>
+      </div>
+      <div class="reveal-tile">
+        <div class="rt-label">What was omitted</div>
+        <div class="rt-val warn" id="c1-omission"></div>
+      </div>
+      <div class="reveal-tile">
+        <div class="rt-label">Charged words used</div>
+        <div class="rt-val bad" id="c1-charged"></div>
+      </div>
+      <div class="reveal-tile">
+        <div class="rt-label">Article vs Headline Match</div>
+        <div class="rt-val" id="c1-match"></div>
+      </div>
+    </div>
+
+    <div class="rewrite-box">
+      <div class="rw-label">Fair, Accurate Rewrite</div>
+      <p id="c1-rewrite"></p>
+    </div>
+
+    <div class="takeaway-box">
+      <div class="takeaway-icon">💡</div>
+      <p id="c1-takeaway"></p>
+    </div>
+
+    <div class="btn-row mt-6">
+      <button class="btn btn-primary" onclick="goToC2()">Next Challenge →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CHALLENGE 2 ═══ -->
+<div class="card" id="challenge2">
+  <div class="card-tag">Challenge 02 — Emotion Detector</div>
+  <h2>How does this make you feel?</h2>
+  <p>Before we begin, here's what you need to know:</p>
+
+  <div class="concept-box">
+    <div class="concept-title">The Concept</div>
+    <p>
+      <strong>Emotional language bypasses critical thinking.</strong> When a post makes you feel outraged, scared, or deeply inspired, your brain prioritises reacting over analyzing. This is called <strong>affect heuristic</strong> — we judge things as good or bad based on how we feel about them. Media creators know this. They carefully select words, punctuation, even font size to trigger a specific emotional response. Learning to name an emotion while consuming media is the first step to seeing past it.
+    </p>
+  </div>
+
+  <div id="c2-scenario">
+    <div class="scenario-meta">
+      <span class="meta-chip" id="c2-platform">Social Platform</span>
+      <span class="meta-chip" id="c2-format">Post</span>
+      <span class="meta-chip" id="c2-reach">Viral</span>
+    </div>
+    <div class="scenario-headline" id="c2-source" style="font-size:13px;border-left-color:var(--warn);color:var(--text2);font-style:italic;"></div>
+    <div class="scenario-body" id="c2-body" style="font-size:15px;line-height:1.85;"></div>
+  </div>
+
+  <div class="q-label">How did this content make you feel?</div>
+  <div class="emotion-grid" id="emotion-grid">
+    <button class="emotion-chip" onclick="c2Emotion(this,'Outraged')">😤 Outraged</button>
+    <button class="emotion-chip" onclick="c2Emotion(this,'Scared')">😨 Scared</button>
+    <button class="emotion-chip" onclick="c2Emotion(this,'Inspired')">✨ Inspired</button>
+    <button class="emotion-chip" onclick="c2Emotion(this,'Sad')">😢 Sad</button>
+    <button class="emotion-chip" onclick="c2Emotion(this,'Proud')">💪 Proud</button>
+    <button class="emotion-chip" onclick="c2Emotion(this,'Suspicious')">🤔 Suspicious</button>
+    <button class="emotion-chip" onclick="c2Emotion(this,'Hopeful')">🌱 Hopeful</button>
+    <button class="emotion-chip" onclick="c2Emotion(this,'Nothing / Neutral')">😐 Neutral</button>
+  </div>
+
+  <div class="q-label">Which specific words or phrases triggered that feeling? (optional)</div>
+  <textarea class="text-input" id="c2-user-text" placeholder="e.g. 'the phrase they DON'T want you to know…' or 'the word SILENT KILLER'"></textarea>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="c2-reveal-btn" onclick="revealC2()" disabled>Reveal Analysis →</button>
+  </div>
+
+  <!-- REVEAL -->
+  <div class="reveal-section" id="c2-reveal">
+    <hr class="divider">
+    <div class="reveal-header">
+      <div class="score-ring">
+        <svg width="70" height="70" viewBox="0 0 70 70">
+          <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(251,191,36,0.12)" stroke-width="5"/>
+          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--warn)" stroke-width="5"
+            stroke-dasharray="176" stroke-dashoffset="176" id="c2-ring-arc"
+            stroke-linecap="round" style="transition:stroke-dashoffset 1.2s ease"/>
+        </svg>
+        <span class="ring-val" id="c2-score-num" style="color:var(--warn)">—</span>
+      </div>
+      <div>
+        <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;font-family:'Courier New',monospace;color:var(--text3);margin-bottom:4px;">Emotional Manipulation Score</div>
+        <div style="font-size:18px;color:var(--text);" id="c2-score-label">Analyzing…</div>
+      </div>
+    </div>
+
+    <div class="q-label" style="margin-bottom:8px;">Highlighted emotional language:</div>
+    <div class="scenario-body" id="c2-annotated" style="font-size:15px;line-height:1.85;margin-bottom:16px;"></div>
+
+    <div class="reveal-grid">
+      <div class="reveal-tile">
+        <div class="rt-label">Target Audience</div>
+        <div class="rt-val warn" id="c2-audience"></div>
+      </div>
+      <div class="reveal-tile">
+        <div class="rt-label">Intended Emotion</div>
+        <div class="rt-val bad" id="c2-intended"></div>
+      </div>
+      <div class="reveal-tile">
+        <div class="rt-label">Manipulation Technique</div>
+        <div class="rt-val bad" id="c2-technique"></div>
+      </div>
+      <div class="reveal-tile">
+        <div class="rt-label">What it wants you to do</div>
+        <div class="rt-val warn" id="c2-cta"></div>
+      </div>
+    </div>
+
+    <div class="rewrite-box">
+      <div class="rw-label">Neutral, Factual Rewrite</div>
+      <p id="c2-rewrite"></p>
+    </div>
+
+    <div class="takeaway-box">
+      <div class="takeaway-icon">💡</div>
+      <p id="c2-takeaway"></p>
+    </div>
+
+    <div class="btn-row mt-6">
+      <button class="btn btn-primary" onclick="goToDash()">View Dashboard →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DASHBOARD ═══ -->
+<div class="card" id="dashboard">
+  <div class="card-tag">Media Integrity Dashboard</div>
+  <h2>Your Analysis Complete</h2>
+
+  <div class="big-score-wrap">
+    <div class="big-score-num" id="dash-score">—</div>
+    <div class="big-score-label">Overall Media Integrity Score</div>
+    <div class="big-score-bar-bg"><div class="big-score-bar" id="dash-score-bar"></div></div>
+  </div>
+
+  <div class="dash-grid">
+    <div class="dash-tile">
+      <h4>What You Learned</h4>
+      <ul id="dash-learned"></ul>
+    </div>
+    <div class="dash-tile">
+      <h4>Biggest Red Flag Spotted</h4>
+      <p id="dash-redflag" style="color:var(--danger);"></p>
+    </div>
+    <div class="dash-tile" style="grid-column:1/-1;">
+      <h4>3 Habits for Sharper Media Literacy</h4>
+      <ul id="dash-habits"></ul>
+    </div>
+  </div>
+
+  <div class="btn-row mt-6" style="justify-content:center;">
+    <button class="btn btn-primary" onclick="replay()">↺ Replay with New Scenarios</button>
+    <button class="btn btn-ghost" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Back to Top</button>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<footer>Media Integrity Analyzer &nbsp;·&nbsp; Educational Tool &nbsp;·&nbsp; All scenarios are fictional</footer>
+
+<script>
+// ═══════════════════════════════════════════════
+// SCENARIO BANK — 3 sets, picked randomly each run
+// ═══════════════════════════════════════════════
+const SCENARIO_SETS = [
+  {
+    c1: {
+      outlet: 'The National Tribune', date: 'Yesterday', section: 'Health',
+      headline: 'Scientists PROVE Coffee Causes Cancer: Millions at Risk',
+      body: 'A new study published in the Journal of Dietary Science found a statistical association between very high coffee consumption — more than 12 cups per day — and a slightly elevated biomarker linked to oxidative stress. The 200-person study lasted three weeks. Lead researcher Dr. Amira Nkosi noted the findings were preliminary and that "coffee at moderate intake continues to show protective effects in larger longitudinal studies." The study has not yet been peer-reviewed.',
+      score: 18,
+      scoreLabel: 'Severely Misleading',
+      annotated: '<span class="highlight-bad">PROVE</span> Coffee <span class="highlight-bad">Causes</span> Cancer: <span class="highlight-bad">Millions at Risk</span>',
+      technique: 'False certainty — "Prove" overstates a correlation finding as established fact',
+      omission: 'Requires 12+ cups/day; only 200 people; not peer-reviewed; researcher said opposite',
+      charged: '"PROVE", "Causes", "Millions at Risk" — all unjustified by the study',
+      match: '⚠️ Severe mismatch — article contradicts headline',
+      rewrite: 'Small study links extremely high coffee intake to one stress biomarker; researchers urge caution before drawing conclusions',
+      takeaway: '<strong>Key takeaway:</strong> Scientific headlines love the word "prove." Real science almost never does. When you see it, find the actual study — look for sample size, duration, and whether it was peer-reviewed.'
+    },
+    c2: {
+      platform: 'Facebook', format: 'Shared Post', reach: '47K Shares',
+      source: 'Source: "Awakened Citizens Network" — page created 3 months ago',
+      body: '🚨 URGENT — They are SILENTLY poisoning your children and the media WON\'T report it. A toxic chemical banned in 14 countries is now LEGALLY being added to school lunch programs across America. Your child eats it EVERY DAY. Share before this gets deleted. The government doesn\'t want you to know. ⚠️ Tag every parent you know. NOW.',
+      emotionScore: 91,
+      emotionLabel: 'Extreme Manipulation',
+      annotated: '🚨 <span class="highlight-emotion">URGENT</span> — They are <span class="highlight-emotion">SILENTLY poisoning</span> your children and <span class="highlight-emotion">the media WON\'T report it</span>. A <span class="highlight-emotion">toxic chemical</span> banned in 14 countries is now LEGALLY being added to school lunch programs across America. Your child eats it <span class="highlight-emotion">EVERY DAY</span>. <span class="highlight-emotion">Share before this gets deleted.</span> The <span class="highlight-emotion">government doesn\'t want you to know.</span> ⚠️ Tag every parent you know.',
+      audience: 'Parents, particularly those with young children in the school system',
+      intended: 'Fear, outrage, and urgency — bypassing rational evaluation',
+      technique: 'Conspiracy framing + false urgency + us vs. them language',
+      cta: 'Share widely without verifying — amplify the message',
+      rewrite: 'A food additive used in some school meals has faced criticism in certain countries. Here\'s what regulators say, and what independent research shows.',
+      takeaway: '<strong>Key takeaway:</strong> When content says "share before it\'s deleted" or "they don\'t want you to know," that\'s engineered urgency. Legitimate warnings don\'t need to threaten deletion. Pause — the more alarming it feels, the more carefully you should verify.'
+    }
+  },
+  {
+    c1: {
+      outlet: 'Daily Pulse Online', date: '2 days ago', section: 'Economy',
+      headline: 'Economy COLLAPSING: Experts Warn of Worst Recession in 100 Years',
+      body: 'A survey of 14 economists conducted by financial blog MoneyPulse found that 6 of them — roughly 43% — believe there is a "moderate risk" of a recession beginning within 18 months if inflation remains elevated. The other 8 economists disagreed or said conditions were uncertain. The U.S. economy grew 2.4% last quarter. Unemployment remains near historic lows at 3.8%.',
+      score: 22,
+      scoreLabel: 'Highly Misleading',
+      annotated: 'Economy <span class="highlight-bad">COLLAPSING</span>: <span class="highlight-bad">Experts Warn</span> of <span class="highlight-bad">Worst Recession in 100 Years</span>',
+      technique: 'Sensationalism — minority opinion presented as consensus fact',
+      omission: 'Only 43% saw moderate risk; economy grew 2.4%; unemployment low; no expert said "100 years"',
+      charged: '"COLLAPSING", "Worst … in 100 Years" — no economist made either claim',
+      match: '⚠️ Severe mismatch — article shows split opinion; headline implies collapse is happening',
+      rewrite: 'Some economists see moderate recession risk in next 18 months, though most point to continued growth and low unemployment',
+      takeaway: '<strong>Key takeaway:</strong> "Experts warn" can mean one expert, or a minority. Always ask: how many experts? What exactly did they say? A range of views is normal — headlines that pick the most alarming one are distorting reality.'
+    },
+    c2: {
+      platform: 'Instagram Reel Caption', format: 'Viral Reel', reach: '2.3M Views',
+      source: 'Account: @HealthTruthsRevealed — 890K followers',
+      body: 'I was LIED TO for 30 years. 💔 Doctors told me to eat whole grains. Then I discovered the TRUTH they hide in medical school. Gluten is destroying your gut, your brain, and your mood — even if you\'re not "officially" celiac. I switched ONE thing and within 14 days my anxiety vanished, my skin cleared, my energy tripled. They profit from your sickness. 🌾❌ Save this. Share this. Your family DESERVES to know.',
+      emotionScore: 84,
+      emotionLabel: 'High Manipulation',
+      annotated: 'I was <span class="highlight-emotion">LIED TO</span> for 30 years. 💔 Doctors told me to eat whole grains. Then I discovered the <span class="highlight-emotion">TRUTH they hide in medical school</span>. Gluten is <span class="highlight-emotion">destroying your gut, your brain, and your mood</span> — even if you\'re not "officially" celiac. I switched ONE thing and within 14 days my <span class="highlight-emotion">anxiety vanished, my skin cleared, my energy tripled</span>. <span class="highlight-emotion">They profit from your sickness.</span> 🌾❌ Save this. Share this. <span class="highlight-emotion">Your family DESERVES to know.</span>',
+      audience: 'Health-conscious adults who distrust mainstream medicine',
+      intended: 'Betrayal, hope, righteous anger — creating identification with the "awakened" narrator',
+      technique: 'Personal testimony as proof + appeal to conspiracy + miracle framing',
+      cta: 'Distrust doctors, buy alternatives, share the message',
+      rewrite: 'I cut gluten and noticed personal improvements. Note: studies show gluten-free diets mainly benefit those with celiac disease or diagnosed gluten sensitivity. Consult a doctor before changing your diet.',
+      takeaway: '<strong>Key takeaway:</strong> Personal testimonials feel true because they\'re human and emotional. But "it worked for me" is not evidence it will work for you, or that the explanation is correct. Ask: is there peer-reviewed research? Who benefits if I believe this?'
+    }
+  },
+  {
+    c1: {
+      outlet: 'BreakingNow.net', date: 'Today', section: 'Politics',
+      headline: 'New Law Would FORCE Every American to Surrender Their Firearms by 2025',
+      body: 'A bill introduced last week by Senator Diana Reyes would create a voluntary federal buyback program for semi-automatic rifles. The proposal, which has 4 co-sponsors out of 100 senators, would allocate $200 million for citizens who voluntarily choose to sell specific models back to the government. No mandatory provisions appear in the bill\'s text. Legal analysts consider passage unlikely given current Senate composition.',
+      score: 12,
+      scoreLabel: 'Extremely Misleading',
+      annotated: 'New Law Would <span class="highlight-bad">FORCE</span> Every American to <span class="highlight-bad">Surrender</span> Their <span class="highlight-bad">Firearms</span> by 2025',
+      technique: 'Fabrication through framing — "voluntary buyback" rewritten as "forced surrender"',
+      omission: 'Voluntary only; only 4 sponsors; analysts say it won\'t pass; limited to certain rifle models',
+      charged: '"FORCE", "Surrender", "Firearms" (implies all guns) — none supported by the bill',
+      match: '⚠️ Extreme mismatch — headline is factually opposite to bill\'s content',
+      rewrite: 'Bill proposes optional federal buyback of some semi-automatic rifles; has limited Senate support and faces steep odds',
+      takeaway: '<strong>Key takeaway:</strong> Political headlines routinely swap "voluntary" for "forced" and "proposal" for "law." A bill with 4 sponsors is nowhere near becoming law. Before reacting, find the bill\'s actual text — it\'s usually public record.'
+    },
+    c2: {
+      platform: 'Twitter / X Thread', format: 'Viral Thread', reach: '180K Likes',
+      source: 'Source: @PatriotDataFacts — anonymous account',
+      body: 'THREAD: The crime statistics they refuse to publish. 🧵\n\nCrime in major cities is up 400% since 2020. Your neighborhood is NOT safe. The media buries these numbers because it doesn\'t fit the narrative.\n\nIf you live near a city, your risk of being a victim has QUADRUPLED. Schools, parks, shopping — nowhere is safe anymore.\n\nRetweet this every day until they admit the truth. Our children deserve better. 1/4',
+      emotionScore: 88,
+      emotionLabel: 'Severe Manipulation',
+      annotated: 'The crime statistics <span class="highlight-emotion">they refuse to publish</span>. 🧵\n\nCrime in major cities is <span class="highlight-emotion">up 400%</span> since 2020. Your neighborhood is <span class="highlight-emotion">NOT safe</span>. The media <span class="highlight-emotion">buries these numbers</span> because it <span class="highlight-emotion">doesn\'t fit the narrative</span>.\n\nIf you live near a city, your risk of being a victim has <span class="highlight-emotion">QUADRUPLED</span>. Schools, parks, shopping — <span class="highlight-emotion">nowhere is safe anymore</span>.\n\n<span class="highlight-emotion">Retweet this every day until they admit the truth.</span>',
+      audience: 'Suburban and rural residents anxious about urban areas and media trust',
+      intended: 'Fear, distrust of institutions, siege mentality',
+      technique: 'Fabricated statistics + media conspiracy framing + manufactured urgency',
+      cta: 'Distrust media, repeat the message daily, vote from a place of fear',
+      rewrite: 'FBI crime data shows some categories of violent crime rose in specific cities between 2020-2022, while others fell. Overall crime trends vary significantly by city and crime type.',
+      takeaway: '<strong>Key takeaway:</strong> Specific numbers like "400%" sound credible — but where\'s the source? Anonymous accounts often cite unnamed statistics. FBI and CDC publish real crime data publicly. If someone won\'t link to a source, be skeptical of the number.'
+    }
+  }
+];
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let SET = null;
+let c1ClickChoice = null;
+let c2EmotionChoice = null;
+let metrics = { accuracy: null, reliability: null, emotion: null, targeting: null };
+
+function pickSet() {
+  SET = SCENARIO_SETS[Math.floor(Math.random() * SCENARIO_SETS.length)];
+}
+
+function initC1() {
+  const s = SET.c1;
+  document.getElementById('c1-outlet').textContent = s.outlet;
+  document.getElementById('c1-date').textContent = s.date;
+  document.getElementById('c1-section').textContent = s.section;
+  document.getElementById('c1-headline').textContent = s.headline;
+  document.getElementById('c1-body').textContent = s.body;
+  c1ClickChoice = null;
+  document.querySelectorAll('#c1-click-btns .btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('c1-reveal-btn').disabled = true;
+  document.getElementById('c1-user-text').value = '';
+  document.getElementById('c1-reveal').classList.remove('shown');
+}
+
+function initC2() {
+  const s = SET.c2;
+  document.getElementById('c2-platform').textContent = s.platform;
+  document.getElementById('c2-format').textContent = s.format;
+  document.getElementById('c2-reach').textContent = s.reach;
+  document.getElementById('c2-source').textContent = s.source;
+  document.getElementById('c2-body').textContent = s.body;
+  c2EmotionChoice = null;
+  document.querySelectorAll('.emotion-chip').forEach(c => c.classList.remove('sel'));
+  document.getElementById('c2-reveal-btn').disabled = true;
+  document.getElementById('c2-user-text').value = '';
+  document.getElementById('c2-reveal').classList.remove('shown');
+}
+
+// ═══════════════════════════════════════════════
+// CHALLENGE 1
+// ═══════════════════════════════════════════════
+function c1Select(type, val) {
+  if (type === 'click') {
+    c1ClickChoice = val;
+    document.querySelectorAll('#c1-click-btns .btn').forEach(b => b.classList.remove('selected'));
+    event.target.classList.add('selected');
+    document.getElementById('c1-reveal-btn').disabled = false;
+  }
+}
+
+function revealC1() {
+  const s = SET.c1;
+  document.getElementById('c1-reveal').classList.add('shown');
+
+  // Score ring
+  const score = s.score;
+  const offset = 176 - (176 * score / 100);
+  setTimeout(() => {
+    document.getElementById('c1-ring-arc').style.strokeDashoffset = offset;
+    document.getElementById('c1-score-num').textContent = score;
+    document.getElementById('c1-score-label').textContent = s.scoreLabel;
+    // Color based on score
+    const color = score < 40 ? 'var(--danger)' : score < 70 ? 'var(--warn)' : 'var(--safe)';
+    document.getElementById('c1-ring-arc').style.stroke = color;
+    document.getElementById('c1-score-num').style.color = color;
+  }, 100);
+
+  document.getElementById('c1-annotated-headline').innerHTML = s.annotated;
+  document.getElementById('c1-technique').textContent = s.technique;
+  document.getElementById('c1-omission').textContent = s.omission;
+  document.getElementById('c1-charged').textContent = s.charged;
+  document.getElementById('c1-match').textContent = s.match;
+  document.getElementById('c1-match').className = 'rt-val bad';
+  document.getElementById('c1-rewrite').textContent = s.rewrite;
+  document.getElementById('c1-takeaway').innerHTML = s.takeaway;
+
+  // Update metrics
+  metrics.accuracy = score;
+  metrics.reliability = Math.round(score * 0.85 + Math.random() * 8);
+  updateMetric('accuracy', metrics.accuracy);
+  updateMetric('reliability', metrics.reliability);
+
+  document.getElementById('c1-reveal-btn').disabled = true;
+  document.getElementById('c1-reveal').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ═══════════════════════════════════════════════
+// CHALLENGE 2
+// ═══════════════════════════════════════════════
+function c2Emotion(el, emotion) {
+  document.querySelectorAll('.emotion-chip').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  c2EmotionChoice = emotion;
+  document.getElementById('c2-reveal-btn').disabled = false;
+}
+
+function revealC2() {
+  const s = SET.c2;
+  document.getElementById('c2-reveal').classList.add('shown');
+
+  const score = s.emotionScore;
+  const offset = 176 - (176 * score / 100);
+  setTimeout(() => {
+    document.getElementById('c2-ring-arc').style.strokeDashoffset = offset;
+    document.getElementById('c2-score-num').textContent = score;
+    document.getElementById('c2-score-label').textContent = s.emotionLabel;
+  }, 100);
+
+  document.getElementById('c2-annotated').innerHTML = s.annotated.replace(/\n/g, '<br>');
+  document.getElementById('c2-audience').textContent = s.audience;
+  document.getElementById('c2-intended').textContent = s.intended;
+  document.getElementById('c2-technique').textContent = s.technique;
+  document.getElementById('c2-cta').textContent = s.cta;
+  document.getElementById('c2-rewrite').textContent = s.rewrite;
+  document.getElementById('c2-takeaway').innerHTML = s.takeaway;
+
+  // metrics
+  metrics.emotion = score;
+  metrics.targeting = Math.round(score * 0.9 + Math.random() * 6);
+  updateMetric('emotion', metrics.emotion, true);
+  updateMetric('targeting', metrics.targeting);
+
+  document.getElementById('c2-reveal-btn').disabled = true;
+  document.getElementById('c2-reveal').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ═══════════════════════════════════════════════
+// METRIC UPDATES
+// ═══════════════════════════════════════════════
+function updateMetric(key, val, invert) {
+  const bar = document.getElementById('bar-' + key);
+  const valEl = document.getElementById('val-' + key);
+  bar.style.width = val + '%';
+  valEl.innerHTML = val + '<span> /100</span>';
+  // color
+  let color;
+  if (invert) {
+    color = val > 70 ? 'var(--danger)' : val > 40 ? 'var(--warn)' : 'var(--safe)';
+  } else {
+    color = val < 40 ? 'var(--danger)' : val < 70 ? 'var(--warn)' : 'var(--safe)';
+  }
+  bar.style.background = color;
+}
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+function goToC2() {
+  const c2 = document.getElementById('challenge2');
+  c2.classList.add('visible');
+  updateProgress(2);
+  setTimeout(() => c2.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+function goToDash() {
+  buildDashboard();
+  const dash = document.getElementById('dashboard');
+  dash.classList.add('visible');
+  updateProgress(3);
+  setTimeout(() => dash.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+function updateProgress(step) {
+  const labels = ['', 'Headline Detective', 'Emotion Detector', 'Dashboard'];
+  document.getElementById('step-label-text').textContent = labels[step];
+  for (let i = 1; i <= 3; i++) {
+    const pip = document.getElementById('pip' + i);
+    if (i < step) { pip.classList.remove('active'); pip.classList.add('done'); pip.textContent = '✓'; }
+    else if (i === step) { pip.classList.add('active'); pip.classList.remove('done'); }
+    else { pip.classList.remove('active', 'done'); pip.textContent = i; }
+  }
+  for (let i = 1; i <= 2; i++) {
+    const line = document.getElementById('line' + i);
+    if (i < step) line.classList.add('done'); else line.classList.remove('done');
+  }
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════
+function buildDashboard() {
+  const acc = metrics.accuracy || 0;
+  const rel = metrics.reliability || 0;
+  const emo = metrics.emotion || 0;
+  const tar = metrics.targeting || 0;
+
+  // Overall score: average of accuracy, reliability; minus manipulation
+  const base = Math.round((acc + rel) / 2);
+  const penalty = Math.round((emo + tar) / 2 * 0.3);
+  const overall = Math.max(0, Math.min(100, base - penalty + 15));
+
+  setTimeout(() => {
+    document.getElementById('dash-score').textContent = overall;
+    const bar = document.getElementById('dash-score-bar');
+    bar.style.width = overall + '%';
+    bar.style.background = overall < 40 ? 'var(--danger)' : overall < 65 ? 'var(--warn)' : 'var(--safe)';
+  }, 200);
+
+  const learned = document.getElementById('dash-learned');
+  learned.innerHTML = `
+    <li>Headlines are crafted to provoke a reaction, not just inform</li>
+    <li>Emotional language bypasses your critical thinking instincts</li>
+    <li>Omitted context can completely change a story's meaning</li>
+    <li>The gap between article content and headline is often vast</li>
+  `;
+
+  const rf = document.getElementById('dash-redflag');
+  if (emo > 85) {
+    rf.textContent = 'Extreme emotional manipulation — content engineered to prevent rational analysis before sharing';
+  } else if (acc < 25) {
+    rf.textContent = 'Headline directly contradicted its own article — a sign of deliberately deceptive framing';
+  } else {
+    rf.textContent = 'Conspiracy framing paired with fabricated or cherry-picked statistics — designed to undermine institutional trust';
+  }
+
+  document.getElementById('dash-habits').innerHTML = `
+    <li><strong>Pause before you share.</strong> Ask: "Have I read the full article — not just the headline?" If not, read it first. Sharing a headline alone spreads the distortion.</li>
+    <li><strong>Name your emotion.</strong> When content makes you feel outraged or scared, say it out loud: "This is making me feel ___." That pause is enough to slow down the affect heuristic and let your reasoning catch up.</li>
+    <li><strong>Check the source before trusting the statistic.</strong> Specific numbers feel authoritative. Find the original report. Look for sample size, who funded it, and whether it was peer-reviewed. If there's no link, be skeptical.</li>
+  `;
+}
+
+// ═══════════════════════════════════════════════
+// REPLAY
+// ═══════════════════════════════════════════════
+function replay() {
+  pickSet();
+  initC1();
+  initC2();
+
+  // Reset metrics display
+  ['accuracy','reliability','emotion','targeting'].forEach(k => {
+    document.getElementById('bar-' + k).style.width = '0%';
+    document.getElementById('val-' + k).innerHTML = '—<span> /100</span>';
+  });
+  metrics = { accuracy: null, reliability: null, emotion: null, targeting: null };
+
+  // Reset progress
+  updateProgress(1);
+
+  // Reset cards
+  document.getElementById('challenge2').classList.remove('visible');
+  document.getElementById('dashboard').classList.remove('visible');
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══════════════════════════════════════════════
+// INTERSECTION OBSERVER — animate cards in
+// ═══════════════════════════════════════════════
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.05 });
+document.querySelectorAll('.card').forEach(c => observer.observe(c));
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+pickSet();
+initC1();
+initC2();
+</script>
+</body>
+</html>
