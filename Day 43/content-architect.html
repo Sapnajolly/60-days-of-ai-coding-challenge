@@ -1,0 +1,956 @@
+<!doctype html>
+<title>Content Architect</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg:#F5F3EF;--bg2:#EDE9E2;--surf:#FFFFFF;--surf2:#F9F8F5;
+  --brd:#DDDAD4;--brd2:#ECEAE5;
+  --tx:#1C1917;--tx2:#74706A;--tx3:#A8A39D;
+  --ac:#C84B31;--ach:#A83B24;--acbg:#FEF2EE;--acbrd:#FBCFBC;
+  --grn:#15803D;--grnbg:#F0FDF4;
+  --sh:0 2px 8px rgba(28,25,23,.08),0 1px 2px rgba(28,25,23,.05);
+  --shm:0 4px 16px rgba(28,25,23,.10),0 2px 4px rgba(28,25,23,.06);
+  --sw:260px;
+  --fd:'Playfair Display',Georgia,serif;
+  --fb:'DM Sans',system-ui,sans-serif;
+  --fm:'DM Mono','Courier New',monospace;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#17161A;--bg2:#201F24;--surf:#242229;--surf2:#2C2A32;
+  --brd:#38363E;--brd2:#2E2C34;
+  --tx:#EDEAE5;--tx2:#9A968F;--tx3:#635F59;
+  --ac:#E0613E;--ach:#C85030;--acbg:#2A1610;--acbrd:#5A2616;
+  --grn:#4ADE80;--grnbg:#0D2318;
+  --sh:0 2px 8px rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.15);
+  --shm:0 4px 16px rgba(0,0,0,.3),0 2px 4px rgba(0,0,0,.2);
+}}
+:root[data-theme="dark"]{
+  --bg:#17161A;--bg2:#201F24;--surf:#242229;--surf2:#2C2A32;
+  --brd:#38363E;--brd2:#2E2C34;
+  --tx:#EDEAE5;--tx2:#9A968F;--tx3:#635F59;
+  --ac:#E0613E;--ach:#C85030;--acbg:#2A1610;--acbrd:#5A2616;
+  --grn:#4ADE80;--grnbg:#0D2318;
+  --sh:0 2px 8px rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.15);
+  --shm:0 4px 16px rgba(0,0,0,.3),0 2px 4px rgba(0,0,0,.2);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--fb);background:var(--bg);color:var(--tx);min-height:100vh;font-size:15px;line-height:1.65}
+
+.app{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{
+  width:var(--sw);min-width:var(--sw);background:var(--surf);
+  border-right:1px solid var(--brd);position:fixed;top:0;left:0;bottom:0;
+  overflow-y:auto;z-index:100;display:flex;flex-direction:column
+}
+.sb-brand{padding:22px 20px 14px;border-bottom:1px solid var(--brd2)}
+.sb-brand h1{font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--tx);letter-spacing:-.01em}
+.sb-brand p{font-size:.68rem;color:var(--tx3);margin-top:3px;letter-spacing:.06em;text-transform:uppercase}
+.sb-prog{padding:12px 20px;border-bottom:1px solid var(--brd2)}
+.prog-lbl{font-size:.66rem;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px}
+.prog-track{background:var(--bg2);border-radius:2px;height:3px;overflow:hidden}
+.prog-fill{height:100%;background:var(--ac);border-radius:2px;transition:width .4s ease;width:0%}
+.prog-ct{font-size:.68rem;color:var(--tx3);margin-top:5px;font-variant-numeric:tabular-nums;font-family:var(--fm)}
+.sb-nav{padding:10px 0;flex:1}
+.nav-i{
+  display:flex;align-items:center;gap:10px;padding:7px 20px;cursor:pointer;
+  text-decoration:none;color:var(--tx2);font-size:.78rem;font-weight:500;
+  transition:color .15s,background .15s;border-left:2px solid transparent
+}
+.nav-i:hover{color:var(--tx);background:var(--bg2)}
+.nav-i.active{color:var(--ac);border-left-color:var(--ac);background:var(--acbg)}
+.ndot{
+  width:18px;height:18px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:.58rem;font-weight:600;flex-shrink:0;font-family:var(--fm)
+}
+.ndot.done{background:var(--grn);color:#fff}
+.ndot.pend{background:var(--bg2);color:var(--tx3);border:1px solid var(--brd)}
+.ndot.prog{background:var(--ac);color:#fff}
+.sb-foot{padding:14px 20px;border-top:1px solid var(--brd2)}
+.ctrls{display:flex;gap:6px}
+.cb{
+  flex:1;background:var(--bg2);border:1px solid var(--brd);border-radius:3px;
+  color:var(--tx2);font-size:.7rem;padding:6px 4px;cursor:pointer;font-family:var(--fb);
+  display:flex;align-items:center;justify-content:center;gap:4px;transition:all .15s
+}
+.cb:hover{background:var(--surf2);color:var(--tx)}
+
+/* MAIN */
+.main{margin-left:var(--sw);flex:1;max-width:880px;padding:0 52px 120px}
+
+/* HERO */
+.hero{padding:60px 0 44px;border-bottom:1px solid var(--brd2);margin-bottom:52px}
+.hero-eye{
+  font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ac);
+  font-weight:600;margin-bottom:14px;font-family:var(--fm)
+}
+.hero-h{
+  font-family:var(--fd);font-size:clamp(2rem,4.5vw,3rem);font-weight:700;
+  line-height:1.1;letter-spacing:-.025em;color:var(--tx);text-wrap:balance;margin-bottom:18px
+}
+.hero-h em{font-style:italic;color:var(--ac)}
+.hero-p{font-size:1rem;color:var(--tx2);max-width:560px;line-height:1.72;margin-bottom:24px}
+.hero-meta{display:flex;gap:20px;flex-wrap:wrap}
+.hm{font-size:.72rem;font-family:var(--fm);color:var(--tx3);display:flex;align-items:center;gap:5px}
+.hm span{color:var(--tx2);font-weight:500}
+
+/* STAGE */
+.stage{margin-bottom:76px;scroll-margin-top:28px}
+.s-hd{margin-bottom:24px;position:relative;padding-right:80px}
+.s-num{
+  font-family:var(--fd);font-size:4.8rem;font-style:italic;font-weight:700;
+  line-height:1;color:var(--brd2);position:absolute;top:-18px;right:0;
+  user-select:none;letter-spacing:-.04em;transition:color .3s
+}
+.stage:hover .s-num{color:var(--brd)}
+.s-tag{
+  font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;font-family:var(--fm);
+  font-weight:500;padding:3px 7px;border-radius:2px;margin-bottom:9px;display:inline-block
+}
+.s-title{font-family:var(--fd);font-size:1.55rem;font-weight:700;color:var(--tx);letter-spacing:-.02em;line-height:1.2;text-wrap:balance}
+.s-sub{font-size:.87rem;color:var(--tx2);margin-top:5px}
+.s-meta{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+.sm{font-size:.7rem;font-family:var(--fm);color:var(--tx3)}
+.sm strong{color:var(--tx2)}
+
+/* TABS */
+.tabs{border-bottom:1px solid var(--brd);display:flex;margin-bottom:22px;overflow-x:auto}
+.tb{
+  background:none;border:none;border-bottom:2px solid transparent;padding:9px 14px;
+  font-family:var(--fb);font-size:.78rem;font-weight:500;color:var(--tx3);cursor:pointer;
+  white-space:nowrap;transition:color .15s,border-color .15s;margin-bottom:-1px
+}
+.tb:hover{color:var(--tx2)}
+.tb.on{color:var(--ac);border-bottom-color:var(--ac)}
+.tc{display:none}
+.tc.on{display:block}
+
+/* TASKS */
+.tlist{list-style:none}
+.ti{display:flex;gap:11px;align-items:flex-start;padding:9px 12px;border-radius:4px;margin-bottom:3px;transition:background .1s}
+.ti:hover{background:var(--surf2)}
+.tck{
+  width:17px;height:17px;border:1.5px solid var(--brd);border-radius:3px;flex-shrink:0;
+  margin-top:3px;cursor:pointer;appearance:none;background:var(--surf);transition:all .15s;
+  position:relative
+}
+.tck:checked{background:var(--ac);border-color:var(--ac)}
+.tck:checked::after{content:'✓';color:#fff;font-size:10px;font-weight:700;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.ttx{font-size:.86rem;color:var(--tx);line-height:1.5;cursor:pointer}
+.ttx small{display:block;color:var(--tx3);font-size:.76rem;margin-top:2px}
+
+/* TOOL CARDS */
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tcard{background:var(--surf);border:1px solid var(--brd);border-radius:5px;padding:14px 16px;transition:box-shadow .2s,border-color .2s}
+.tcard:hover{box-shadow:var(--sh);border-color:var(--acbrd)}
+.tcard.pri{border-left:3px solid var(--ac)}
+.ttop{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:7px}
+.tname{font-weight:600;font-size:.86rem;color:var(--tx)}
+.tbadge{font-size:.6rem;padding:2px 6px;border-radius:2px;font-family:var(--fm);font-weight:500;white-space:nowrap}
+.bp{background:var(--acbg);color:var(--ac);border:1px solid var(--acbrd)}
+.ba{background:var(--bg2);color:var(--tx3);border:1px solid var(--brd)}
+.bf{background:var(--grnbg);color:var(--grn);border:1px solid rgba(21,128,61,.25)}
+.tdesc{font-size:.78rem;color:var(--tx2);line-height:1.5}
+.turl{font-size:.7rem;font-family:var(--fm);color:var(--tx3);margin-top:7px;display:block;text-decoration:none}
+.turl:hover{color:var(--ac)}
+
+/* PROMPTS */
+.pblock{background:var(--surf);border:1px solid var(--brd);border-radius:5px;margin-bottom:14px;overflow:hidden}
+.phd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--brd2)}
+.plbl{font-size:.7rem;font-family:var(--fm);color:var(--tx3);letter-spacing:.04em}
+.cpbtn{
+  background:none;border:1px solid var(--brd);border-radius:3px;padding:2px 8px;
+  font-size:.66rem;font-family:var(--fm);color:var(--tx3);cursor:pointer;transition:all .15s
+}
+.cpbtn:hover{background:var(--bg2);color:var(--tx)}
+.cpbtn.cpd{background:var(--grnbg);color:var(--grn);border-color:rgba(21,128,61,.3)}
+.ptxt{padding:13px 14px;font-size:.79rem;line-height:1.65;color:var(--tx);font-family:var(--fm);white-space:pre-wrap;word-break:break-word}
+.pnote{padding:9px 14px;background:var(--bg2);border-top:1px solid var(--brd2);font-size:.73rem;color:var(--tx3)}
+
+/* TIPS */
+.tipgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tipbox{background:var(--surf);border:1px solid var(--brd);border-radius:5px;padding:16px}
+.tipbox h4{font-size:.68rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-family:var(--fm);margin-bottom:12px}
+.tipbox.g h4{color:var(--grn)}
+.tipbox.b h4{color:var(--ac)}
+.tiplist{list-style:none}
+.tiplist li{display:flex;gap:8px;font-size:.8rem;color:var(--tx2);line-height:1.5;padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid var(--brd2)}
+.tiplist li:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
+.tiplist li::before{flex-shrink:0;font-size:.72rem;margin-top:2px}
+.tipbox.g .tiplist li::before{content:'→';color:var(--grn)}
+.tipbox.b .tiplist li::before{content:'✕';color:var(--ac)}
+
+/* OUTPUT */
+.outbox{background:var(--surf2);border:1px solid var(--brd);border-radius:5px;padding:14px 16px;margin-top:18px}
+.outbox h4{font-size:.68rem;font-family:var(--fm);color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:9px}
+.otags{display:flex;flex-wrap:wrap;gap:7px}
+.otag{background:var(--surf);border:1px solid var(--brd);border-radius:3px;padding:4px 9px;font-size:.76rem;color:var(--tx2)}
+
+/* NOTES */
+.notes-wrap{margin-top:20px}
+.nlbl{font-size:.68rem;font-family:var(--fm);color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px;display:block}
+.nta{
+  width:100%;min-height:76px;background:var(--surf);border:1px solid var(--brd);
+  border-radius:4px;padding:9px 11px;font-family:var(--fb);font-size:.8rem;
+  color:var(--tx);resize:vertical;line-height:1.55;transition:border-color .15s
+}
+.nta:focus{outline:none;border-color:var(--ac)}
+.nta::placeholder{color:var(--tx3)}
+
+/* CONCLUSION */
+.concl{margin-top:76px;padding-top:52px;border-top:1px solid var(--brd)}
+.concl-title{font-family:var(--fd);font-size:1.7rem;font-weight:700;letter-spacing:-.02em;color:var(--tx);margin-bottom:36px}
+.csec{margin-bottom:44px}
+.csec h3{font-size:.68rem;font-family:var(--fm);letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:14px;padding-bottom:9px;border-bottom:1px solid var(--brd2)}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.sitem{background:var(--surf);border:1px solid var(--brd);border-radius:4px;padding:11px 13px}
+.srole{font-size:.62rem;font-family:var(--fm);color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.stool{font-size:.84rem;font-weight:600;color:var(--tx)}
+.rlist{list-style:none}
+.ri{display:flex;align-items:flex-start;gap:11px;padding:11px 0;border-bottom:1px solid var(--brd2);font-size:.84rem}
+.ri:last-child{border-bottom:none}
+.rtype{font-family:var(--fm);font-size:.62rem;color:var(--tx3);width:44px;flex-shrink:0;padding-top:2px;text-transform:uppercase;letter-spacing:.04em}
+.rname{font-weight:500;color:var(--tx)}
+.rdesc{font-size:.76rem;color:var(--tx3);margin-top:2px}
+.pmini{
+  background:var(--surf);border:1px solid var(--brd);border-left:3px solid var(--ac);
+  border-radius:4px;padding:11px 13px;font-size:.78rem;font-family:var(--fm);
+  color:var(--tx2);line-height:1.6;cursor:pointer;transition:background .1s;
+  position:relative;margin-bottom:8px
+}
+.pmini:hover{background:var(--surf2)}
+.pmini-hint{position:absolute;top:7px;right:10px;font-size:.6rem;color:var(--tx3)}
+.kwraps{display:flex;flex-wrap:wrap;gap:7px}
+.kw{background:var(--surf);border:1px solid var(--brd);border-radius:3px;padding:4px 9px;font-size:.75rem;color:var(--tx2);cursor:pointer;transition:border-color .2s}
+.kw:hover{border-color:var(--ac);color:var(--ac)}
+.aitem{display:flex;gap:9px;font-size:.8rem;color:var(--tx2);line-height:1.5;padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid var(--brd2)}
+.aitem:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.aitem::before{content:'→';color:var(--ac);flex-shrink:0;font-size:.72rem;margin-top:2px}
+
+/* MOBILE */
+.mob-tog{
+  display:none;position:fixed;bottom:20px;right:20px;background:var(--ac);color:#fff;
+  border:none;border-radius:50%;width:46px;height:46px;font-size:1.1rem;cursor:pointer;
+  z-index:200;box-shadow:var(--shm);align-items:center;justify-content:center
+}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s ease}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0;padding:0 22px 100px}
+  .mob-tog{display:flex}
+  .tipgrid,.tgrid{grid-template-columns:1fr}
+  .sgrid{grid-template-columns:1fr 1fr}
+}
+@media print{
+  .sidebar,.mob-tog,.tabs,.ctrls{display:none!important}
+  .main{margin-left:0;padding:24px}
+  .stage{break-inside:avoid}
+  .tc{display:block!important}
+}
+@media(prefers-reduced-motion:no-preference){
+  .stage{opacity:0;transform:translateY(14px)}
+  .stage.vis{opacity:1;transform:none;transition:opacity .5s ease,transform .5s ease}
+}
+@media(prefers-reduced-motion:reduce){.stage{opacity:1;transform:none}}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--brd);border-radius:3px}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+</style>
+
+<div class="app">
+<nav class="sidebar" id="sidebar">
+  <div class="sb-brand">
+    <h1>Content Architect</h1>
+    <p>Solo Creator · Written Content</p>
+  </div>
+  <div class="sb-prog">
+    <div class="prog-lbl">Overall Progress</div>
+    <div class="prog-track"><div class="prog-fill" id="pbar"></div></div>
+    <div class="prog-ct" id="pct">0 of 0 tasks complete</div>
+  </div>
+  <div class="sb-nav" id="sbnav"></div>
+  <div class="sb-foot">
+    <div class="ctrls">
+      <button class="cb" onclick="toggleTheme()">◐ Theme</button>
+      <button class="cb" onclick="window.print()">⎙ Print</button>
+      <button class="cb" onclick="resetAll()">↺ Reset</button>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <header class="hero" id="top">
+    <div class="hero-eye">AI Workflow Architect</div>
+    <h2 class="hero-h">Your complete <em>content strategy</em> system, built for one.</h2>
+    <p class="hero-p">An end-to-end playbook for solo creators running their own editorial operation — from defining what you stand for to turning every article into compounding leverage.</p>
+    <div class="hero-meta">
+      <div class="hm">Type <span>Written Content</span></div>
+      <div class="hm">Goal <span>Strategy &amp; Systems</span></div>
+      <div class="hm">Scale <span>Solo Creator</span></div>
+      <div class="hm">Phases <span>8 Stages</span></div>
+    </div>
+  </header>
+  <div id="stages"></div>
+  <section class="concl" id="conclusion">
+    <h2 class="concl-title">Putting it all together</h2>
+    <div class="csec"><h3>Recommended AI Stack</h3><div class="sgrid" id="sg"></div></div>
+    <div class="csec"><h3>Learning Resources</h3><ul class="rlist" id="rl"></ul></div>
+    <div class="csec"><h3>Communities</h3><ul class="rlist" id="cl"></ul></div>
+    <div class="csec"><h3>Future Automation Opportunities</h3><div id="al"></div></div>
+    <div class="csec"><h3>Additional AI Prompts</h3><div id="fp"></div></div>
+    <div class="csec"><h3>Search Keywords</h3><div class="kwraps" id="kw"></div></div>
+  </section>
+</main>
+</div>
+<button class="mob-tog" id="mobt" onclick="toggleSidebar()">☰</button>
+
+<script>
+const DATA=[
+{id:'niche',n:'01',c:'#C84B31',
+ title:'Niche & Audience Definition',
+ sub:'Decide exactly who you write for and what you uniquely offer them',
+ time:'4–8 hours (revisit quarterly)',cad:'One-time foundation',
+ tasks:[
+  {t:'Write your content niche in one sentence',d:'Specific topic + specific audience + what makes it yours'},
+  {t:'List 3 competitors or peers in your niche',d:'Note their angle, gaps you see, and what they do well'},
+  {t:'Build a reader persona',d:'Job title, goals, frustrations, content they already consume'},
+  {t:'Draft your content mission statement',d:'I help [audience] do [outcome] through [content type]'},
+  {t:'Identify your unique point of view (POV)',d:"What do you believe that most people in your niche don't say?"},
+  {t:'Validate demand — find 3 communities asking your questions',d:'Reddit, Quora, Discord, LinkedIn, niche newsletters'},
+ ],
+ tools:[
+  {name:'Claude',why:'Persona generation, niche validation, and mission statement iteration in natural conversation',b:'p',url:'claude.ai'},
+  {name:'SparkToro',why:'Discover where your target audience hangs out and what they actually read',b:'p',url:'sparktoro.com'},
+  {name:'Perplexity',why:'Fast competitive landscape research with cited sources',b:'a',url:'perplexity.ai'},
+  {name:'Reddit Search',why:'Mine real audience language, frustrations, and questions — completely free',b:'f',url:'reddit.com/search'},
+ ],
+ prompts:[
+  {lbl:'Niche Validation',txt:`I want to create content about [TOPIC]. My background is [YOUR BACKGROUND].
+
+Identify 3 specific sub-niches within this space that are underserved. For each, describe:
+- The ideal reader (role, stage, pain point)
+- A content angle that would differentiate me from existing creators
+- Estimated audience size (small / medium / large)
+- Why this sub-niche is underserved right now
+
+Be direct and specific. Avoid obvious or generic answers.`,note:"Replace [TOPIC] and [YOUR BACKGROUND] with your specifics before running."},
+  {lbl:'Reader Persona',txt:`Create a detailed reader persona for a solo content creator writing about [NICHE].
+
+Include: job title, age range, primary goals, top 3 frustrations, content they already consume, objections to subscribing to yet another newsletter, and what would make them share an article with a colleague.
+
+Write it as a narrative paragraph, not a bulleted list. Make it feel like a real person.`,note:"Use this persona as a filter whenever you're evaluating a topic idea or headline."},
+ ],
+ bp:['Niche down until it feels uncomfortably specific — you can expand once you have an audience','Your POV matters more than your niche; two writers can own the same topic with different angles','Write your mission statement before writing anything else — it\'s your editorial filter','Validate by finding real people asking your exact questions in forums and communities'],
+ mis:['Picking a niche based on what seems profitable, not what you can write about for 2+ years','Defining your audience too broadly ("marketers" instead of "B2B SaaS founders who do their own content")','Skipping competitive analysis and accidentally replicating someone else\'s exact angle','Confusing your niche (topic) with your POV (perspective) — both need to be defined'],
+ out:['Written niche statement (1 sentence)','Reader persona (1 page)','Content mission statement','5–10 competitor/peer publications listed'],
+},
+{id:'research',n:'02',c:'#2563EB',
+ title:'Content Research & Ideation',
+ sub:'Build a system for never running out of ideas worth writing',
+ time:'2–3 hours/week',cad:'Weekly',
+ tasks:[
+  {t:'Define 3–5 content pillars (core topic categories)',d:'Everything you publish falls under one of these'},
+  {t:'Set up a single running idea inbox',d:'Notion, Obsidian, or plain text — one place, always open'},
+  {t:'Run keyword research for your top 3 pillars',d:'Look for question-based keywords and long-tail opportunities'},
+  {t:'Mine 10 questions from Reddit, Quora, or community forums',d:'Real language = real search intent'},
+  {t:'Identify 3 trending topics in your niche this week',d:'Google Trends, newsletters, X/Twitter'},
+  {t:'Score each idea: audience fit, uniqueness, demand, effort',d:'Simple 1–3 scale. Prioritize high-fit + high-demand.'},
+ ],
+ tools:[
+  {name:'Ahrefs',why:'Keyword research, topic difficulty, and competitor content gap analysis',b:'p',url:'ahrefs.com'},
+  {name:'AnswerThePublic',why:'Visualizes questions and comparisons people are searching around any topic',b:'p',url:'answerthepublic.com'},
+  {name:'Google Trends',why:'Free signal for rising topics and seasonal demand — underused by most creators',b:'f',url:'trends.google.com'},
+  {name:'Perplexity',why:'Quick research synthesis with sources — good for validating topic depth fast',b:'a',url:'perplexity.ai'},
+ ],
+ prompts:[
+  {lbl:'Idea Generation',txt:`I write for [READER PERSONA] about [NICHE]. My content pillars are: [PILLAR 1], [PILLAR 2], [PILLAR 3].
+
+Generate 15 specific content ideas I haven't likely seen before. For each idea:
+- Write the exact article headline
+- Explain why this reader needs it right now
+- Describe the angle that makes it different from the obvious version
+
+Prioritize ideas that are counterintuitive, underexplored, or solve a specific frustration.`,note:'Run this monthly, then score ideas against your criteria before adding them to the calendar.'},
+  {lbl:'Topic Deep Dive',txt:`I want to write a comprehensive piece about [TOPIC]. My audience is [READER PERSONA].
+
+Research this topic and give me:
+1. The 5 most important things my reader needs to understand
+2. 3 common misconceptions about this topic
+3. The most interesting data point or statistic available
+4. 2–3 contrarian angles worth exploring
+5. Related questions this article should answer
+
+Do not give me a generic outline. Give me the most valuable, specific insights.`,note:'Use this to brief yourself before writing, so you never come to the blank page uninformed.'},
+ ],
+ bp:['Keep one idea inbox — one place, always open, add immediately when inspiration hits','Separate idea capture from idea evaluation; do them in different sessions','Mix SEO-driven topics with original thinking; over-indexing on search creates derivative content','Mine competitor comment sections and reviews for underserved angles'],
+ mis:['Generating ideas in isolation without first validating audience interest','Chasing trending topics that don\'t connect to your core pillars','Storing ideas in three different apps and reviewing none of them','Writing only what\'s easy instead of what your audience actually needs most'],
+ out:['Content pillar definitions (3–5)','Idea inbox with 20+ scored topics','Keyword research doc per pillar','Weekly research digest (optional)'],
+},
+{id:'planning',n:'03',c:'#7C3AED',
+ title:'Editorial Planning',
+ sub:'Build the calendar, batching system, and publishing rhythm that makes you consistent',
+ time:'2–4 hours/month',cad:'Monthly planning, weekly review',
+ tasks:[
+  {t:'Set your publishing frequency and non-negotiable cadence',d:'Start slower than you think. Consistency beats volume every time.'},
+  {t:'Build a 4–8 week content calendar',d:'Assign topics to dates, not just list topics in a doc'},
+  {t:'Create a content brief template',d:'Headline, angle, audience, key points, calls to action'},
+  {t:'Schedule batch-writing sessions in your calendar',d:'2–3 hour blocks — not stolen minutes between meetings'},
+  {t:'Define your publishing checklist',d:'What must happen before every piece goes live'},
+  {t:'Plan 1 content upgrade or lead magnet per month',d:'Turns readers into subscribers — the compounding asset'},
+ ],
+ tools:[
+  {name:'Notion',why:'Flexible editorial calendar, content briefs, and knowledge base in one workspace',b:'p',url:'notion.so'},
+  {name:'Claude',why:'Generate complete content briefs from raw topic ideas in seconds',b:'p',url:'claude.ai'},
+  {name:'Trello',why:'Kanban pipeline for tracking articles from idea to published',b:'a',url:'trello.com'},
+  {name:'Google Sheets',why:'Simple, shareable editorial calendar if you prefer a spreadsheet view',b:'f',url:'sheets.google.com'},
+ ],
+ prompts:[
+  {lbl:'Content Brief Generator',txt:`Generate a content brief for:
+
+Topic: [TOPIC]
+Audience: [READER PERSONA]
+Pillar: [CONTENT PILLAR]
+Publishing Date: [DATE]
+
+Include:
+- 3 headline options (one SEO, one curiosity, one contrarian)
+- Core angle / thesis (1–2 sentences)
+- Key points to cover (5–7 bullets)
+- What to avoid (clichés or already-covered angles)
+- Suggested word count and format
+- Call to action
+- Internal links to consider
+
+Be specific. This brief should let me start writing without needing more research.`,note:'Save this as a template. Fill in the variables for each new piece.'},
+  {lbl:'Monthly Calendar',txt:`I publish [FREQUENCY] per week about [NICHE]. My pillars are [PILLAR 1], [PILLAR 2], [PILLAR 3].
+
+Plan the next 4 weeks of content. For each piece:
+- Assign it to a pillar
+- Suggest the format (how-to, opinion, roundup, case study, etc.)
+- Give a working headline
+- Note whether it's search-driven or authority-building
+
+Balance the pillars evenly and vary the formats. Include one "cornerstone" piece — something designed to rank and compound over time.`,note:"Run this at the start of each month. Adjust based on what performed last month."},
+ ],
+ bp:['Plan in 4-week blocks — long enough to build rhythm, short enough to adjust','Write briefs before you schedule writing time — the blank page should never be your first step','One cornerstone piece per month: researched, thorough, built to rank long-term','Leave 20% of your calendar flexible for reactive or timely content'],
+ mis:['Planning too far ahead without reviewing what actually performed','Treating the calendar as aspirational rather than a real commitment','Writing every format the same — briefs should specify format, not just topic','Forgetting to repurpose existing high-performing content'],
+ out:['4-week editorial calendar','Content brief template','Publishing checklist','Monthly content plan doc'],
+},
+{id:'writing',n:'04',c:'#059669',
+ title:'Writing & Drafting',
+ sub:'Move from outline to publishable draft with AI as your thinking partner, not your ghostwriter',
+ time:'2–4 hours per piece',cad:'Per article',
+ tasks:[
+  {t:'Write a detailed outline before drafting',d:'H2s, key points per section, flow logic — know where you\'re going'},
+  {t:'Write the opening paragraph and closing first',d:'Opens earn attention, closings earn action'},
+  {t:'Draft in timed sessions: 25 min on, 5 min off',d:'Pomodoro reduces friction. Do not edit while writing.'},
+  {t:'Use AI to unblock specific sections, not write the full piece',d:'AI for research, examples, and angles — not your voice'},
+  {t:'Add specific examples and original data wherever possible',d:'Generic advice is forgettable; specificity earns trust'},
+  {t:'Write the headline last',d:'Headlines emerge from what the article actually argues'},
+ ],
+ tools:[
+  {name:'iA Writer',why:'Distraction-free writing environment. No sidebar, no suggestions — just the draft.',b:'p',url:'ia.net/writer'},
+  {name:'Claude',why:'Outline generation, section unblocking, argument testing, and example brainstorming',b:'p',url:'claude.ai'},
+  {name:'Notion AI',why:'In-context AI assistance within your editorial workspace',b:'a',url:'notion.so'},
+  {name:'Hemingway Editor',why:'Paste your draft to surface passive voice, complexity, and readability issues',b:'f',url:'hemingwayapp.com'},
+ ],
+ prompts:[
+  {lbl:'Outline Builder',txt:`Help me outline this article:
+
+Headline: [HEADLINE]
+Audience: [READER]
+Core argument: [THESIS IN ONE SENTENCE]
+Key points I know I want to cover: [YOUR NOTES]
+
+Create a detailed outline with:
+- A compelling opening structure (hook, problem, promise)
+- 4–6 main sections with descriptive H2s
+- 2–3 key sub-points per section
+- A closing structure (synthesis, insight, CTA)
+
+Each section header should be specific enough that I know exactly what to write without guessing. No vague headings like "Why This Matters."`,note:'Use the outline as your GPS. Deviate when the writing takes you somewhere better.'},
+  {lbl:'Section Unblocking',txt:`I'm writing a section about [SECTION TOPIC] for an article aimed at [READER]. Here's what I have so far:
+
+[PASTE YOUR DRAFT OR NOTES]
+
+I'm stuck because [REASON YOU'RE STUCK].
+
+Help me:
+1. Identify the real point I'm trying to make
+2. Suggest 2–3 ways to open this section
+3. Give me 2 specific examples or analogies that make this concrete
+4. Point out what I might be missing
+
+Don't rewrite my draft. Help me figure out what I actually want to say.`,note:"The key instruction is \"don't rewrite my draft\" — this keeps your voice in the piece."},
+ ],
+ bp:['Write with notifications off — drafting mode and editing mode are different cognitive states','Specificity is the biggest lever on quality — replace every generic statement with a concrete example','AI is a thinking partner, not a ghostwriter; use it to pressure-test arguments, not generate them','Read your draft out loud before editing — your ear catches what your eye misses'],
+ mis:['Using AI to write the full draft, then editing — you end up with AI\'s voice, not yours','Trying to edit and write in the same session','Starting with a perfect opening paragraph and running out of energy for the rest','Skipping the outline because you "know what you want to say" — outlines reveal the gaps'],
+ out:['Detailed outline','Complete first draft','Working headline (3 options)','List of examples and data points used'],
+},
+{id:'editing',n:'05',c:'#D97706',
+ title:'Editing & Quality Control',
+ sub:'Transform your draft into something precise, skimmable, and SEO-ready',
+ time:'1–2 hours per piece',cad:'Per article',
+ tasks:[
+  {t:'Let the draft rest at least 24 hours before editing',d:'Distance reveals problems you cannot see while inside the draft'},
+  {t:'Structural edit first: does the argument hold?',d:'Delete, reorder, or add sections before fixing any sentences'},
+  {t:'Line edit for clarity, concision, and voice',d:'Cut every word that doesn\'t earn its place'},
+  {t:'Run SEO audit: keyword, meta description, internal links',d:'Keyword in first 100 words, meta under 160 chars, 2–3 internal links'},
+  {t:'Optimize for skimmability: subheads, pull quotes, bullets',d:'Most readers skim first — give them a reason to go deeper'},
+  {t:'Final proofread with fresh eyes or text-to-speech',d:'Read aloud or use a screen reader to catch what silent reading misses'},
+ ],
+ tools:[
+  {name:'Claude',why:'Structural feedback, clarity rewrites, headline testing, and SEO meta generation',b:'p',url:'claude.ai'},
+  {name:'Grammarly',why:'Grammar, tone, and clarity checks with in-line suggestions across your workflow',b:'p',url:'grammarly.com'},
+  {name:'Surfer SEO',why:'Real-time on-page SEO scoring against top-ranking competitors for your keyword',b:'a',url:'surferseo.com'},
+  {name:'Hemingway Editor',why:'Readability score, passive voice flagging, and sentence complexity analysis — free',b:'f',url:'hemingwayapp.com'},
+ ],
+ prompts:[
+  {lbl:'Structural Feedback',txt:`I've written a first draft. Give me editorial feedback on structure and argument only — not grammar or sentence-level issues.
+
+Draft:
+[PASTE DRAFT]
+
+Tell me:
+1. Is the core argument clear by the end of the opening?
+2. Does each section logically lead to the next?
+3. Where does the piece lose momentum or get repetitive?
+4. What's missing that a skeptical reader would ask?
+5. Is the ending strong, or does it trail off?
+
+Be direct. I can handle honest feedback.`,note:"Do this before line editing. Structural problems can't be fixed with better sentences."},
+  {lbl:'SEO Metadata',txt:`Generate SEO metadata for this article:
+
+Title: [ARTICLE TITLE]
+Target keyword: [KEYWORD]
+Summary: [2–3 sentences about what the article covers]
+
+Provide:
+- 3 meta description options (under 155 characters each, include keyword naturally)
+- 3 alternative headlines optimized for search click-through
+- 5 semantic keywords to include naturally in the body
+- Suggested URL slug
+
+Prioritize click-through over keyword stuffing.`,note:'Run this after the draft is finalized — the article shapes the metadata, not the other way around.'},
+ ],
+ bp:['Always do structural editing before line editing — fixing sentences in a broken structure is wasted effort','Delete more than you think you should — the best version of most articles is 20% shorter','Write the meta description as a promise, not a summary — it should make someone want to click','Every H2 should stand alone as a micro-headline that earns the scroll'],
+ mis:['Editing the same day you write — you see what\'s in your head, not what\'s on the page','Running SEO optimization before the draft is structurally sound','Treating readability tools as the final word — they flag style, not quality','Adding keywords unnaturally — readers and Google both notice'],
+ out:['Final edited draft','SEO metadata (title, meta, slug)','Internal link map','Formatted article ready for publishing platform'],
+},
+{id:'publishing',n:'06',c:'#DC2626',
+ title:'Publishing & Distribution',
+ sub:'Get your work live on the right platforms with the right format for each',
+ time:'45–90 minutes per piece',cad:'Per article',
+ tasks:[
+  {t:'Format and upload to your primary platform',d:'Blog (Ghost/WordPress), Newsletter (Beehiiv/ConvertKit/Substack)'},
+  {t:'Add featured image or header visual',d:'Consistent visual style reinforces brand recognition across every touchpoint'},
+  {t:'Confirm SEO tags, categories, and slug are set',d:'Meta description and image alt text included'},
+  {t:'Cross-post to secondary platforms with canonical tag',d:'Medium, LinkedIn Articles — canonical tag prevents duplicate content issues'},
+  {t:'Send to email subscribers with a personal intro',d:'The email version is a different read than the web version — adapt it'},
+  {t:'Update internal links on older related posts',d:'Link equity flows to your newest piece; older posts benefit too'},
+ ],
+ tools:[
+  {name:'Ghost',why:'Best-in-class newsletter + blog combo for solo creators; built-in subscriber management and SEO',b:'p',url:'ghost.org'},
+  {name:'Beehiiv',why:'Newsletter platform built for monetization and growth; powerful referral and analytics tools',b:'p',url:'beehiiv.com'},
+  {name:'Canva',why:'Fast, brand-consistent featured images and social sharing cards with minimal effort',b:'a',url:'canva.com'},
+  {name:'WordPress',why:'Maximum control and SEO flexibility for blog-first creators who want full ownership',b:'a',url:'wordpress.org'},
+ ],
+ prompts:[
+  {lbl:'Email Intro Writer',txt:`Write a short email intro (150–200 words) to accompany this article for my newsletter subscribers.
+
+Article title: [TITLE]
+Article summary: [2–3 sentence summary]
+My newsletter tone: [CONVERSATIONAL / PROFESSIONAL / etc.]
+
+The intro should:
+- Feel personal, like I'm writing to one reader, not a list
+- Briefly explain why I wrote this and why now
+- Create curiosity about the article without summarizing it
+- End with a natural transition into the piece
+
+Do not write a formal introduction. Write how I'd open an email to a colleague.`,note:'The email open rate depends on the subject line AND the first sentence — make both count.'},
+  {lbl:'Social Announcement',txt:`Write 3 social media posts announcing this article:
+
+Title: [TITLE]
+Core insight: [MAIN TAKEAWAY]
+
+Post 1 — LinkedIn (professional, slightly longer, ends with a question)
+Post 2 — X/Twitter (punchy, one key insight, under 240 chars)
+Post 3 — Threads (conversational, invite discussion)
+
+Each post should:
+- Lead with the most interesting or counterintuitive insight
+- Not summarize the article — make them curious
+- End with a natural link invite (not "check it out")
+- Sound like a human wrote it`,note:'Test different hooks across platforms. What works on LinkedIn rarely works on X.'},
+ ],
+ bp:['Separate the web article from the email version — the same text sent cold to subscribers underperforms','Canonical tags on cross-posts protect your SEO — always set the original URL as canonical','Follow your publishing checklist every single time — mistakes happen at the end of long writing sessions','Your featured image earns attention before the headline does on social'],
+ mis:['Publishing without a featured image — social shares look blank and get less traction','Sending the same copy to every platform without adapting tone and format','Forgetting to update older related posts with internal links to the new piece','Treating newsletter send as announcement — email subscribers deserve slightly different framing'],
+ out:['Published article (primary platform)','Newsletter sent','Cross-post URLs','Social media copy for 2–3 platforms'],
+},
+{id:'promotion',n:'07',c:'#0891B2',
+ title:'Promotion & Amplification',
+ sub:'Every piece deserves a distribution strategy — written once, shared everywhere',
+ time:'1–2 hours per piece, ongoing',cad:'Day-of publish + 7-day window',
+ tasks:[
+  {t:'Share on primary social channel with native-format content',d:'LinkedIn post, Twitter thread, or carousel — not just a link'},
+  {t:'Engage in 3–5 relevant communities with useful comment + link',d:'Reddit, Slack groups, Discord — add value first, link second'},
+  {t:'Pitch the piece to 2 newsletters for potential inclusion',d:'Find curators in your niche who regularly link to good content'},
+  {t:'Repurpose into a Twitter/X thread or LinkedIn carousel',d:'Extract 5 best insights; each point becomes a slide or tweet'},
+  {t:'Email 3–5 people who would find this specifically useful',d:'Personal outreach beats mass blasting — mention why you thought of them'},
+  {t:'Schedule a reshare in 60–90 days if it\'s evergreen',d:'Most content gets zero second chance — put a reminder in your calendar'},
+ ],
+ tools:[
+  {name:'Typefully',why:'Schedule and optimize Twitter/X threads and LinkedIn posts; per-post analytics on engagement',b:'p',url:'typefully.com'},
+  {name:'Claude',why:'Repurpose articles into threads, carousels, and TL;DRs in minutes — paste the article, get the format',b:'p',url:'claude.ai'},
+  {name:'Buffer',why:'Schedule posts across platforms — free tier works well for solo creators',b:'f',url:'buffer.com'},
+  {name:'SparkLoop',why:'Find newsletters actively curating your niche for potential inclusion or referral partnerships',b:'a',url:'sparkloop.app'},
+ ],
+ prompts:[
+  {lbl:'Twitter/X Thread',txt:`Turn this article into a Twitter/X thread:
+
+Article: [PASTE ARTICLE OR SUMMARY]
+
+Rules:
+- 8–12 tweets
+- Tweet 1 is the hook — most counterintuitive or surprising insight
+- Each tweet is self-contained (understood without the others)
+- Tweet 3–4 is the "meat" — the most valuable single insight
+- Final tweet links back to the full article and asks a question
+- No emojis unless they genuinely add clarity
+- Write in direct, confident voice. Earned curiosity, not clickbait.`,note:'Threads perform best when tweet 1 is strong enough to stand entirely alone.'},
+  {lbl:'LinkedIn Carousel',txt:`Create a LinkedIn carousel script from this article:
+
+Article: [PASTE ARTICLE OR SUMMARY]
+
+Format:
+- Slide 1: Bold headline (the one insight that changes how they think)
+- Slides 2–7: One key insight per slide, 1-sentence explanation
+- Slide 8: Action slide — what to do with this information
+- Slide 9: Follow/subscribe CTA with your one-liner pitch
+
+Keep each slide to 15 words or fewer. This is visual, not a wall of text.`,note:'Post the carousel as a PDF native to LinkedIn — not a link. Native content always outperforms.'},
+ ],
+ bp:['The best distribution is earned, not broadcast — add real value in communities before dropping links','Repurpose your top 20% performing pieces into 80% of your social content','Create a reshare calendar — set reminders at 60, 90, and 180 days for evergreen pieces','Personal DMs with a specific reason outperform newsletter pitches 10x'],
+ mis:['Publishing and immediately moving to the next article — distribution takes as long as writing','Sharing the same link post across all platforms without native format adaptation','Dropping links in communities without being an active member first','Only promoting at publish time and never again'],
+ out:['Social posts (2–3 platforms, native format)','Thread or carousel','5 personalized outreach emails','Reshare calendar entry'],
+},
+{id:'analytics',n:'08',c:'#4F46E5',
+ title:'Analytics & Iteration',
+ sub:'Read your numbers, understand what works, and let data sharpen your strategy',
+ time:'1–2 hours/week',cad:'Weekly check-in + monthly deep review',
+ tasks:[
+  {t:'Set up Google Analytics 4 + Search Console',d:'Non-negotiable baseline: traffic, sources, keyword rankings'},
+  {t:'Choose 4–5 metrics that actually reflect your goals',d:"Don't measure everything — measure what tells you if you're winning"},
+  {t:'Run a weekly 15-minute data review',d:'Traffic trends, top performers, new keyword rankings'},
+  {t:'Monthly: identify top 3 and bottom 3 performing pieces',d:'Update top performers; consider rewriting or retiring bottom ones'},
+  {t:'Run a quarterly content audit',d:'What to update, consolidate, redirect, or remove'},
+  {t:'Document findings and update your editorial strategy',d:'Data is only useful if it changes what you do next'},
+ ],
+ tools:[
+  {name:'Google Search Console',why:'Keyword rankings, click-through rates, and indexing status — free and essential for every creator',b:'f',url:'search.google.com/search-console'},
+  {name:'Ahrefs',why:'Track keyword position changes and surface content opportunities over time',b:'p',url:'ahrefs.com'},
+  {name:'Fathom Analytics',why:'Privacy-first web analytics with a clean UI — far easier to read than GA4 for solos',b:'a',url:'usefathom.com'},
+  {name:'Beehiiv Analytics',why:'Open rates, click rates, subscriber growth, and churn for newsletter content',b:'p',url:'beehiiv.com'},
+ ],
+ prompts:[
+  {lbl:'Content Audit Analysis',txt:`I'm doing a content audit. Here are my top 10 articles by traffic (last 90 days):
+
+[Title | Traffic | Avg. time on page | Conversions]
+
+And my bottom 10:
+[Title | Traffic | Avg. time on page | Conversions]
+
+Analyze:
+1. What patterns explain the top performers? (topic, format, length, angle)
+2. What's dragging the bottom performers? (thin content, wrong audience, outdated?)
+3. Which bottom performers could be updated vs. consolidated vs. removed?
+4. What should I create more of based on this data?
+
+Give me a prioritized action list, not just observations.`,note:"A data review without a clear next action is just reporting. Always end with \"so we do X.\""},
+  {lbl:'Monthly Reflection',txt:`Based on last month's content performance, I want to reflect on strategy.
+
+Published: [LIST TITLES AND FORMATS]
+Performed well: [TOP 2–3 + WHY YOU THINK SO]
+Didn't perform: [BOTTOM 1–2 + SUSPECTED REASON]
+Goal for next month: [GOAL]
+
+Help me:
+1. Identify what my top performers have in common
+2. Suggest 1 experiment to run next month based on the data
+3. Recommend one thing I should stop doing
+4. Suggest one format or channel I haven't tried that might suit my audience
+
+Keep this strategic, not descriptive.`,note:'Run this at the end of every month. Consistency here compounds faster than any single great piece.'},
+ ],
+ bp:['Define your north star metric — the one number that tells you if your strategy is working','Update top-performing evergreen pieces quarterly; staleness kills rankings slowly','Track email subscriber growth as carefully as page views — subscribers are compounding assets','Heatmaps (Microsoft Clarity, free) show you exactly where readers stop reading'],
+ mis:['Tracking vanity metrics (page views) instead of outcome metrics (subscribers, conversions)','Letting data paralyze you — analytics inform decisions, they don\'t make them','Ignoring Search Console — it shows you exactly what people search to find your work','Not updating high-traffic articles with fresh examples and data'],
+ out:['Weekly analytics snapshot (15 min)','Monthly performance summary','Quarterly content audit spreadsheet','Updated editorial strategy doc'],
+},
+];
+
+const STACK=[
+ {r:'Strategy',t:'Claude'},{r:'Research',t:'Perplexity'},{r:'Keywords',t:'Ahrefs'},
+ {r:'Planning',t:'Notion'},{r:'Writing',t:'iA Writer'},{r:'SEO',t:'Surfer SEO'},
+ {r:'Platform',t:'Ghost'},{r:'Email',t:'Beehiiv'},{r:'Social',t:'Typefully'},
+ {r:'Analytics',t:'Search Console'},{r:'Editing',t:'Grammarly'},{r:'Visuals',t:'Canva'},
+];
+const RES=[
+ {tp:'Book',n:'On Writing Well — William Zinsser',d:'The definitive guide to clear, readable nonfiction writing'},
+ {tp:'Book',n:'They Ask You Answer — Marcus Sheridan',d:'Content strategy built around your audience\'s real questions'},
+ {tp:'Course',n:'Content Strategy for Professionals (Coursera)',d:'Northwestern\'s professional content strategy curriculum, free to audit'},
+ {tp:'Newsletter',n:'The Rebooting — Brian Morrissey',d:'Honest analysis of how digital media and solo publishing actually works'},
+ {tp:'Blog',n:'Backlinko — Brian Dean',d:'Data-driven SEO strategies that hold up over time'},
+ {tp:'Podcast',n:'My First Million',d:'Practical thinking on content leverage, audience, and monetization for solo operators'},
+];
+const COMM=[
+ {tp:'Slack',n:'Superpath',d:'The most active Slack community for content marketers and solo writers'},
+ {tp:'Forum',n:'r/content_marketing',d:'Reddit\'s content marketing community with real practitioner discussion'},
+ {tp:'Discord',n:'Newsletter Crew',d:'Newsletter operators sharing growth, monetization, and production tactics'},
+ {tp:'LinkedIn',n:'Creator Economy Groups',d:'Search "content strategy" and "solo creator" to find active professional groups'},
+];
+const AUTO=[
+ 'Auto-generate social posts from RSS feed when new articles publish (Zapier + Buffer)',
+ 'Auto-submit published pieces to Hacker News, Indie Hackers, and relevant subreddits',
+ 'AI newsletter curation: weekly digest auto-drafted from articles saved in Readwise or Pocket',
+ 'Automated weekly performance report delivered to your inbox from GA4 via Looker Studio',
+ 'Google Trends alerts for keywords in your niche — email when a topic spikes',
+ 'Evergreen reshare queue: auto-schedule old posts based on traffic performance score',
+];
+const FP=[
+ 'Analyze my last 5 articles and identify patterns in what makes them work or fail. Here they are: [PASTE TITLES + BRIEF DESCRIPTIONS]',
+ 'Write a swipe file of 10 opening lines for my niche — each opening a different article type (how-to, opinion, story, data-driven, contrarian).',
+ 'I\'m burning out on content production. Give me 5 strategies to reduce time without reducing quality.',
+ 'Review this headline: [HEADLINE]. Rate it on clarity, curiosity, and specificity. Give me 5 better alternatives.',
+ 'Identify 10 content gaps in [NICHE] by analyzing what questions appear in forums but have no comprehensive articles answering them.',
+];
+const KW=[
+ 'content strategy framework','editorial calendar template','solo creator workflow',
+ 'content batching system','SEO content strategy','newsletter growth tactics',
+ 'content repurposing','audience research methods','content pillar strategy',
+ 'creator monetization','content analytics KPIs','writing productivity systems',
+];
+
+function hex2rgba(h,a){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return `rgba(${r},${g},${b},${a})`}
+
+function render(){
+  // STAGES
+  const sc=document.getElementById('stages');
+  DATA.forEach(s=>{
+    const el=document.createElement('section');
+    el.className='stage';el.id='s-'+s.id;
+    el.innerHTML=`
+<div class="s-hd">
+  <div class="s-num">${s.n}</div>
+  <div class="s-tag" style="background:${hex2rgba(s.c,.12)};color:${s.c}">Stage ${s.n}</div>
+  <h2 class="s-title">${s.title}</h2>
+  <p class="s-sub">${s.sub}</p>
+  <div class="s-meta">
+    <span class="sm">⏱ <strong>${s.time}</strong></span>
+    <span class="sm">↺ <strong>${s.cad}</strong></span>
+  </div>
+</div>
+<div class="tabs" role="tablist">
+  <button class="tb on" onclick="stab(this,'t-${s.id}')" role="tab">Tasks</button>
+  <button class="tb" onclick="stab(this,'tools-${s.id}')" role="tab">AI Tools</button>
+  <button class="tb" onclick="stab(this,'p-${s.id}')" role="tab">Prompts</button>
+  <button class="tb" onclick="stab(this,'bp-${s.id}')" role="tab">Best Practices</button>
+</div>
+<div class="tc on" id="t-${s.id}">
+  <ul class="tlist">${s.tasks.map((t,i)=>`
+    <li class="ti">
+      <input type="checkbox" class="tck" id="ck-${s.id}-${i}" onchange="upd()" aria-label="${t.t}">
+      <label class="ttx" for="ck-${s.id}-${i}">${t.t}<small>${t.d}</small></label>
+    </li>`).join('')}</ul>
+  <div class="outbox"><h4>Expected Outputs</h4><div class="otags">${s.out.map(o=>`<span class="otag">${o}</span>`).join('')}</div></div>
+  <div class="notes-wrap">
+    <label class="nlbl" for="n-${s.id}">Your Notes</label>
+    <textarea class="nta" id="n-${s.id}" placeholder="Add notes for this stage…" oninput="sn('${s.id}',this.value)"></textarea>
+  </div>
+</div>
+<div class="tc" id="tools-${s.id}">
+  <div class="tgrid">${s.tools.map(t=>`
+    <div class="tcard ${t.b==='p'?'pri':''}">
+      <div class="ttop">
+        <div class="tname">${t.name}</div>
+        <span class="tbadge ${t.b==='p'?'bp':t.b==='f'?'bf':'ba'}">${t.b==='p'?'Recommended':t.b==='f'?'Free':'Alternative'}</span>
+      </div>
+      <p class="tdesc">${t.why}</p>
+      <a class="turl" href="https://${t.url}" target="_blank" rel="noopener">${t.url} ↗</a>
+    </div>`).join('')}</div>
+</div>
+<div class="tc" id="p-${s.id}">
+  ${s.prompts.map((p,pi)=>`
+    <div class="pblock">
+      <div class="phd">
+        <span class="plbl">${p.lbl}</span>
+        <button class="cpbtn" onclick="cp(this,'pt-${s.id}-${pi}')">Copy</button>
+      </div>
+      <div class="ptxt" id="pt-${s.id}-${pi}">${p.txt}</div>
+      <div class="pnote">${p.note}</div>
+    </div>`).join('')}
+</div>
+<div class="tc" id="bp-${s.id}">
+  <div class="tipgrid">
+    <div class="tipbox g"><h4>Best Practices</h4><ul class="tiplist">${s.bp.map(t=>`<li>${t}</li>`).join('')}</ul></div>
+    <div class="tipbox b"><h4>Common Mistakes</h4><ul class="tiplist">${s.mis.map(t=>`<li>${t}</li>`).join('')}</ul></div>
+  </div>
+</div>`;
+    sc.appendChild(el);
+  });
+
+  // SIDEBAR NAV
+  const nav=document.getElementById('sbnav');
+  DATA.forEach(s=>{
+    const a=document.createElement('a');
+    a.href='#s-'+s.id;a.className='nav-i';a.setAttribute('data-t','s-'+s.id);
+    a.innerHTML=`<span class="ndot pend" id="dot-${s.id}">${s.n}</span><span>${s.title}</span>`;
+    a.addEventListener('click',()=>{if(window.innerWidth<=900)toggleSidebar()});
+    nav.appendChild(a);
+  });
+  const ca=document.createElement('a');
+  ca.href='#conclusion';ca.className='nav-i';ca.setAttribute('data-t','conclusion');
+  ca.innerHTML=`<span class="ndot pend" style="font-size:.52rem">★</span><span>Wrap-Up & AI Stack</span>`;
+  ca.addEventListener('click',()=>{if(window.innerWidth<=900)toggleSidebar()});
+  nav.appendChild(ca);
+
+  // CONCLUSION
+  STACK.forEach(s=>{
+    const d=document.createElement('div');d.className='sitem';
+    d.innerHTML=`<div class="srole">${s.r}</div><div class="stool">${s.t}</div>`;
+    document.getElementById('sg').appendChild(d);
+  });
+  RES.forEach(r=>{
+    const li=document.createElement('li');li.className='ri';
+    li.innerHTML=`<span class="rtype">${r.tp}</span><div><div class="rname">${r.n}</div><div class="rdesc">${r.d}</div></div>`;
+    document.getElementById('rl').appendChild(li);
+  });
+  COMM.forEach(c=>{
+    const li=document.createElement('li');li.className='ri';
+    li.innerHTML=`<span class="rtype">${c.tp}</span><div><div class="rname">${c.n}</div><div class="rdesc">${c.d}</div></div>`;
+    document.getElementById('cl').appendChild(li);
+  });
+  const al=document.getElementById('al');
+  AUTO.forEach(a=>{
+    const d=document.createElement('div');d.className='aitem';d.textContent=a;
+    al.appendChild(d);
+  });
+  FP.forEach((p,i)=>{
+    const d=document.createElement('div');d.className='pmini';
+    d.innerHTML=`${p}<span class="pmini-hint">click to copy</span>`;
+    d.onclick=()=>copyStr(d,p);
+    document.getElementById('fp').appendChild(d);
+  });
+  const kc=document.getElementById('kw');
+  KW.forEach(k=>{
+    const sp=document.createElement('span');sp.className='kw';sp.textContent=k;
+    sp.onclick=()=>copyStr(sp,k);
+    kc.appendChild(sp);
+  });
+}
+
+function stab(btn,id){
+  const sec=btn.closest('.stage')||btn.closest('.concl');
+  btn.closest('.tabs').querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  sec.querySelectorAll('.tc').forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');
+  const t=document.getElementById(id);if(t)t.classList.add('on');
+}
+
+function cp(btn,id){
+  const el=document.getElementById(id);if(!el)return;
+  navigator.clipboard.writeText(el.textContent.trim()).then(()=>{
+    btn.textContent='Copied!';btn.classList.add('cpd');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('cpd')},2000);
+  });
+}
+
+function copyStr(el,txt){
+  navigator.clipboard.writeText(txt).then(()=>{
+    el.style.borderLeftColor='var(--grn)';
+    setTimeout(()=>el.style.borderLeftColor='',1500);
+  });
+}
+
+function upd(){
+  const all=document.querySelectorAll('.tck');
+  const done=[...all].filter(c=>c.checked);
+  const pct=all.length?Math.round(done.length/all.length*100):0;
+  document.getElementById('pbar').style.width=pct+'%';
+  document.getElementById('pct').textContent=`${done.length} of ${all.length} tasks complete`;
+  DATA.forEach(s=>{
+    const sc=[...document.querySelectorAll(`#s-${s.id} .tck`)];
+    const sd=sc.filter(c=>c.checked);
+    const dot=document.getElementById('dot-'+s.id);if(!dot)return;
+    dot.className='ndot '+(sd.length===sc.length&&sc.length?'done':sd.length?'prog':'pend');
+  });
+  sp();
+}
+
+function sn(id,v){try{localStorage.setItem('note-'+id,v)}catch(e){}}
+function sp(){
+  const st={};
+  document.querySelectorAll('.tck').forEach(c=>st[c.id]=c.checked);
+  try{localStorage.setItem('wp',JSON.stringify(st))}catch(e){}
+}
+function lp(){
+  try{
+    const st=JSON.parse(localStorage.getItem('wp')||'{}');
+    Object.entries(st).forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.checked=v});
+    DATA.forEach(s=>{
+      const v=localStorage.getItem('note-'+s.id)||'';
+      const e=document.getElementById('n-'+s.id);if(e)e.value=v;
+    });
+    upd();
+  }catch(e){}
+}
+function resetAll(){
+  if(!confirm('Reset all progress and notes?'))return;
+  try{localStorage.clear()}catch(e){}
+  document.querySelectorAll('.tck').forEach(c=>c.checked=false);
+  document.querySelectorAll('.nta').forEach(t=>t.value='');
+  upd();
+}
+function toggleTheme(){
+  const r=document.documentElement;
+  const c=r.getAttribute('data-theme');
+  r.setAttribute('data-theme',c==='dark'?'light':c==='light'?'system':'dark');
+  if(r.getAttribute('data-theme')==='system')r.removeAttribute('data-theme');
+  try{localStorage.setItem('th',r.getAttribute('data-theme')||'system')}catch(e){}
+}
+function lt(){try{const t=localStorage.getItem('th');if(t&&t!=='system')document.documentElement.setAttribute('data-theme',t)}catch(e){}}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open')}
+
+function scrollspy(){
+  const secs=document.querySelectorAll('.stage,.concl');
+  const nis=document.querySelectorAll('.nav-i');
+  const ob=new IntersectionObserver(es=>{
+    es.forEach(e=>{
+      if(e.isIntersecting){
+        nis.forEach(n=>n.classList.remove('active'));
+        const m=document.querySelector(`.nav-i[data-t="${e.target.id}"]`);
+        if(m)m.classList.add('active');
+      }
+    });
+  },{rootMargin:'-15% 0px -75% 0px'});
+  secs.forEach(s=>ob.observe(s));
+}
+
+function animate(){
+  const ob=new IntersectionObserver(es=>{
+    es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('vis');ob.unobserve(e.target)}});
+  },{threshold:.06});
+  document.querySelectorAll('.stage').forEach(s=>ob.observe(s));
+}
+
+lt();render();
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',()=>{lp();scrollspy();animate()});
+}else{lp();scrollspy();animate();}
+</script>
