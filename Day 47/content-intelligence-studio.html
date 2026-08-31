@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Intelligence Studio</title>
+<style>
+  :root{
+    --ink:#EDE9E0;
+    --ink-dim:#A9A499;
+    --bg:#13120F;
+    --bg-2:#1B1916;
+    --surface:#201E1A;
+    --surface-2:#2A2722;
+    --line:#39352E;
+    --gold:#C9A24B;
+    --gold-soft:#8E7333;
+    --teal:#4F9CA8;
+    --teal-soft:#2E5D64;
+    --good:#7AA874;
+    --warn:#D3924B;
+    --bad:#C15C4C;
+    --radius-s:3px;
+    --radius-m:6px;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  }
+  [data-theme="light"]{
+    --ink:#211F1B;
+    --ink-dim:#5C574C;
+    --bg:#F4F1E9;
+    --bg-2:#ECE7DA;
+    --surface:#FFFDF8;
+    --surface-2:#F1ECE0;
+    --line:#DCD5C4;
+    --gold:#9A7A25;
+    --gold-soft:#B99640;
+    --teal:#2E6B76;
+    --teal-soft:#5FA0AB;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    transition:background .3s ease,color .3s ease;
+  }
+  ::selection{background:var(--gold);color:#13120F;}
+  a{color:var(--teal);}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px 120px;}
+
+  /* ---------- HEADER ---------- */
+  header.site{
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,var(--bg-2),var(--bg));
+  }
+  .site-inner{
+    max-width:1180px;margin:0 auto;padding:22px 28px 26px;
+    display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  }
+  .brand-mark{display:flex;align-items:baseline;gap:12px;}
+  .brand-glyph{
+    font-family:var(--serif);font-size:30px;font-style:italic;color:var(--gold);
+    border:1px solid var(--gold-soft);width:44px;height:44px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;flex:none;
+  }
+  h1.brand{
+    font-family:var(--serif);font-weight:400;font-size:27px;margin:0;letter-spacing:.2px;
+  }
+  .brand-sub{font-size:13px;color:var(--ink-dim);margin-top:2px;}
+  .header-tools{display:flex;align-items:center;gap:10px;}
+  .pill-toggle{
+    background:var(--surface);border:1px solid var(--line);color:var(--ink-dim);
+    padding:7px 14px;border-radius:20px;font-size:13px;cursor:pointer;transition:border-color .2s,color .2s;
+  }
+  .pill-toggle:hover{border-color:var(--gold-soft);color:var(--ink);}
+
+  /* ---------- SECTION LABELS ---------- */
+  .stage-label{
+    display:flex;align-items:center;gap:12px;margin:52px 0 18px;
+  }
+  .stage-label .num{
+    font-family:var(--serif);font-style:italic;color:var(--gold);font-size:15px;
+  }
+  .stage-label h2{
+    font-family:var(--serif);font-weight:400;font-size:22px;margin:0;
+  }
+  .stage-label .rule{flex:1;height:1px;background:var(--line);}
+  .stage-note{color:var(--ink-dim);font-size:13.5px;margin:-8px 0 20px;max-width:640px;}
+
+  /* ---------- SETUP GRID ---------- */
+  .setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:760px){.setup-grid{grid-template-columns:1fr;}}
+  .field{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);
+    padding:14px 16px;
+  }
+  .field label{
+    display:block;font-size:12.5px;color:var(--ink-dim);margin-bottom:8px;
+  }
+  select, textarea, input[type=text]{
+    width:100%;background:var(--bg-2);border:1px solid var(--line);color:var(--ink);
+    border-radius:var(--radius-s);padding:9px 10px;font-family:var(--sans);font-size:14px;
+    outline:none;transition:border-color .15s;
+  }
+  select:focus, textarea:focus, input:focus{border-color:var(--gold-soft);}
+  textarea{resize:vertical;min-height:160px;font-size:14.5px;line-height:1.55;}
+
+  .upload-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
+  @media(max-width:760px){.upload-row{grid-template-columns:1fr;}}
+  .dropzone{
+    background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius-m);
+    padding:18px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;
+    position:relative;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  }
+  .dropzone:hover{border-color:var(--gold-soft);}
+  .dropzone.has-file{border-style:solid;}
+  .dropzone input{display:none;}
+  .dz-title{font-size:13.5px;color:var(--ink);}
+  .dz-sub{font-size:12px;color:var(--ink-dim);}
+  .dz-preview{max-width:100%;max-height:130px;border-radius:var(--radius-s);border:1px solid var(--line);}
+  .dz-clear{
+    position:absolute;top:8px;right:8px;background:var(--bg-2);border:1px solid var(--line);
+    color:var(--ink-dim);width:22px;height:22px;border-radius:50%;font-size:12px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  .run-bar{margin-top:22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+  .btn-run{
+    background:var(--gold);color:#191510;border:none;padding:13px 26px;border-radius:4px;
+    font-size:14.5px;font-weight:600;cursor:pointer;letter-spacing:.2px;transition:transform .15s,background .2s;
+    font-family:var(--sans);
+  }
+  .btn-run:hover{background:#dcb45c;}
+  .btn-run:active{transform:scale(.98);}
+  .btn-run:disabled{opacity:.45;cursor:not-allowed;}
+  .run-hint{font-size:12.5px;color:var(--ink-dim);}
+
+  .error-banner{
+    margin-top:18px;background:rgba(193,92,76,.12);border:1px solid var(--bad);color:#E8B3A9;
+    padding:12px 16px;border-radius:var(--radius-m);font-size:13.5px;display:none;
+  }
+  .error-banner button{
+    background:none;border:1px solid var(--bad);color:#E8B3A9;padding:5px 12px;border-radius:3px;
+    cursor:pointer;margin-left:10px;font-size:12.5px;
+  }
+
+  /* ---------- PIPELINE ---------- */
+  #pipelineSection, #resultsSection{display:none;}
+  .pipeline-grid{display:grid;grid-template-columns:260px 1fr;gap:22px;}
+  @media(max-width:820px){.pipeline-grid{grid-template-columns:1fr;}}
+  .reviewer-list{display:flex;flex-direction:column;gap:8px;}
+  .reviewer-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);
+    padding:11px 13px;display:flex;align-items:center;gap:10px;font-size:13px;
+  }
+  .rc-dot{width:9px;height:9px;border-radius:50%;background:var(--line);flex:none;transition:background .3s;}
+  .reviewer-card.running .rc-dot{background:var(--gold);animation:pulse 1.1s ease-in-out infinite;}
+  .reviewer-card.done .rc-dot{background:var(--good);}
+  .reviewer-card.error .rc-dot{background:var(--bad);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .rc-name{flex:1;}
+  .rc-status{font-size:11px;color:var(--ink-dim);}
+
+  .activity-log{
+    background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-m);
+    padding:14px 16px;height:340px;overflow-y:auto;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    font-size:12.5px;color:var(--ink-dim);
+  }
+  .activity-log .entry{margin-bottom:6px;}
+  .activity-log .t{color:var(--gold-soft);margin-right:8px;}
+
+  /* ---------- RESULTS ---------- */
+  .score-hero{
+    display:flex;gap:36px;align-items:center;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius-m);padding:28px;flex-wrap:wrap;
+  }
+  .score-ring-wrap{flex:none;}
+  .score-num{font-family:var(--serif);font-size:44px;}
+  .score-text{max-width:520px;}
+  .score-text h3{font-family:var(--serif);font-weight:400;font-size:20px;margin:0 0 8px;}
+  .score-text p{color:var(--ink-dim);font-size:14px;margin:0;}
+
+  .category-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:20px;}
+  .cat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:16px;}
+  .cat-card h4{margin:0 0 10px;font-size:13.5px;font-weight:600;}
+  .bar-track{background:var(--bg-2);border-radius:3px;height:6px;overflow:hidden;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--teal-soft),var(--gold));width:0%;transition:width 1s cubic-bezier(.2,.8,.2,1);}
+  .cat-score{font-size:12px;color:var(--ink-dim);margin-top:6px;}
+
+  .tabs{display:flex;gap:4px;margin-top:36px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .tab-btn{
+    background:none;border:none;color:var(--ink-dim);padding:10px 16px;font-size:13.5px;cursor:pointer;
+    border-bottom:2px solid transparent;font-family:var(--sans);
+  }
+  .tab-btn.active{color:var(--ink);border-bottom-color:var(--gold);}
+  .tab-panel{display:none;padding:22px 0;}
+  .tab-panel.active{display:block;}
+
+  .rev-block{margin-bottom:22px;}
+  .rev-block h5{
+    font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--gold-soft);
+    margin:0 0 8px;font-weight:600;
+  }
+  .rev-block p{margin:0;font-size:14.5px;color:var(--ink);}
+  .rev-block ul{margin:0;padding-left:18px;}
+  .rev-block li{margin-bottom:6px;font-size:14px;color:var(--ink);}
+
+  .report-section{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:26px;margin-top:16px;}
+  .report-section h3{font-family:var(--serif);font-weight:400;font-size:19px;margin:0 0 12px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:760px){.two-col{grid-template-columns:1fr;}}
+  .ba-card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-s);padding:16px;}
+  .ba-card .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-dim);margin-bottom:8px;}
+  .ba-card.after{border-color:var(--gold-soft);}
+
+  .chip-list{display:flex;flex-direction:column;gap:10px;}
+  .chip{
+    background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-s);padding:11px 14px;
+    font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;
+  }
+  .chip button{
+    background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:3px;padding:4px 9px;
+    font-size:11.5px;cursor:pointer;flex:none;
+  }
+  .chip button:hover{border-color:var(--gold-soft);color:var(--ink);}
+
+  .checklist-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .checklist-item:last-child{border-bottom:none;}
+  .checklist-item input{margin-top:3px;}
+
+  .perf-meter{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-s);padding:18px;}
+  .perf-meter .disclaimer{font-size:11.5px;color:var(--ink-dim);font-style:italic;margin-top:10px;}
+
+  .prompt-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+  .prompt-item{
+    background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-s);padding:10px 13px;
+    font-size:13.5px;cursor:pointer;transition:border-color .15s;
+  }
+  .prompt-item:hover{border-color:var(--teal-soft);}
+
+  footer.site{border-top:1px solid var(--line);margin-top:70px;padding:26px 0;text-align:center;color:var(--ink-dim);font-size:12.5px;}
+
+  .spin{
+    width:14px;height:14px;border:2px solid var(--bg);border-top-color:transparent;border-radius:50%;
+    display:inline-block;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+</style>
+</head>
+<body data-theme="dark">
+
+<header class="site">
+  <div class="site-inner">
+    <div class="brand-mark">
+      <div class="brand-glyph">C</div>
+      <div>
+        <h1 class="brand">Content Intelligence Studio</h1>
+        <div class="brand-sub">An AI editorial consultant for your writing, visuals, and performance</div>
+      </div>
+    </div>
+    <div class="header-tools">
+      <button class="pill-toggle" id="themeToggle">Switch to light</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ===================== SETUP ===================== -->
+  <section id="setupSection">
+    <div class="stage-label"><span class="num">I.</span><h2>Brief</h2><span class="rule"></span></div>
+    <p class="stage-note">Confirm the context for this piece — the review team and criteria are assembled around these answers.</p>
+
+    <div class="setup-grid">
+      <div class="field">
+        <label for="selType">Content type</label>
+        <select id="selType">
+          <option value="Blog / article / newsletter" selected>Blog / article / newsletter</option>
+          <option value="Social media post or caption">Social media post or caption</option>
+          <option value="Video / reel / short script or transcript">Video / reel / short script or transcript</option>
+          <option value="Thumbnail or image design">Thumbnail or image design</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="selPlatform">Platform</label>
+        <select id="selPlatform">
+          <option value="LinkedIn (article)" selected>LinkedIn (article)</option>
+          <option value="Medium / Substack">Medium / Substack</option>
+          <option value="Personal blog / company site">Personal blog / company site</option>
+          <option value="Instagram">Instagram</option>
+          <option value="YouTube">YouTube</option>
+          <option value="TikTok">TikTok</option>
+          <option value="X / Twitter">X / Twitter</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="selGoal">Primary goal</label>
+        <select id="selGoal">
+          <option value="Build authority and thought leadership" selected>Build authority and thought leadership</option>
+          <option value="Maximize engagement (likes, comments, shares)">Maximize engagement (likes, comments, shares)</option>
+          <option value="Drive traffic or leads to an offer">Drive traffic or leads to an offer</option>
+          <option value="Grow followers or network">Grow followers or network</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="selCritique">Review intensity</label>
+        <select id="selCritique">
+          <option value="Gentle and encouraging — lead with strengths, frame issues as opportunities" selected>Gentle & encouraging</option>
+          <option value="Balanced — an honest mix of strengths and issues">Balanced</option>
+          <option value="Rigorous — a critical, high-bar professional editor">Rigorous</option>
+          <option value="Brutal — ruthless, agency-level scrutiny">Brutal</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="upload-row">
+      <div class="field" style="grid-column:1/-1;">
+        <label for="taText">Paste your content (article text, caption, script, etc.)</label>
+        <textarea id="taText" placeholder="Paste the full text of your LinkedIn article here..."></textarea>
+      </div>
+    </div>
+
+    <div class="upload-row">
+      <div class="dropzone" id="dzCover">
+        <input type="file" id="fileCover" accept="image/*">
+        <div class="dz-body">
+          <div class="dz-title">Cover image / thumbnail</div>
+          <div class="dz-sub">Optional — click or drop an image</div>
+        </div>
+      </div>
+      <div class="dropzone" id="dzAnalytics">
+        <input type="file" id="fileAnalytics" accept="image/*">
+        <div class="dz-body">
+          <div class="dz-title">Analytics screenshot</div>
+          <div class="dz-sub">Optional — impressions, engagement, etc.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="run-bar">
+      <button class="btn-run" id="btnRun">Run analysis</button>
+      <span class="run-hint" id="runHint">Add text and/or an image, then run.</span>
+    </div>
+
+    <div class="error-banner" id="errorBanner">
+      <span id="errorText"></span>
+      <button id="btnRetry">Retry</button>
+    </div>
+  </section>
+
+  <!-- ===================== PIPELINE ===================== -->
+  <section id="pipelineSection">
+    <div class="stage-label"><span class="num">II.</span><h2>Review in progress</h2><span class="rule"></span></div>
+    <p class="stage-note">Each specialist reviews independently, then a chief strategist synthesizes the findings.</p>
+    <div class="pipeline-grid">
+      <div class="reviewer-list" id="reviewerList"></div>
+      <div class="activity-log" id="activityLog"></div>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTS ===================== -->
+  <section id="resultsSection">
+    <div class="stage-label"><span class="num">III.</span><h2>Content health report</h2><span class="rule"></span></div>
+
+    <div class="score-hero">
+      <div class="score-ring-wrap"><svg id="scoreRing" width="130" height="130" viewBox="0 0 130 130"></svg></div>
+      <div class="score-text">
+        <h3 id="execHeadline">Executive summary</h3>
+        <p id="execSummary">—</p>
+      </div>
+    </div>
+
+    <div class="category-grid" id="categoryGrid"></div>
+
+    <div class="stage-label"><span class="num">IV.</span><h2>Reviewer findings</h2><span class="rule"></span></div>
+    <div class="tabs" id="tabBar"></div>
+    <div id="tabPanels"></div>
+
+    <div class="stage-label"><span class="num">V.</span><h2>Final report</h2><span class="rule"></span></div>
+
+    <div class="report-section">
+      <h3>Highest-impact improvements</h3>
+      <ul id="topImprovements"></ul>
+    </div>
+
+    <div class="report-section">
+      <h3>Before vs. after</h3>
+      <div class="two-col">
+        <div class="ba-card before"><div class="lbl">Before</div><div id="beforeText"></div></div>
+        <div class="ba-card after"><div class="lbl">After — rewritten opening</div><div id="afterText"></div></div>
+      </div>
+    </div>
+
+    <div class="report-section">
+      <h3>Alternative hooks & titles</h3>
+      <div class="two-col">
+        <div>
+          <div class="lbl" style="font-size:11px;color:var(--ink-dim);text-transform:uppercase;margin-bottom:8px;">Hooks</div>
+          <div class="chip-list" id="hookList"></div>
+        </div>
+        <div>
+          <div class="lbl" style="font-size:11px;color:var(--ink-dim);text-transform:uppercase;margin-bottom:8px;">Titles</div>
+          <div class="chip-list" id="titleList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="report-section">
+      <h3>Publishing checklist</h3>
+      <div id="checklistWrap"></div>
+    </div>
+
+    <div class="report-section">
+      <h3>Predicted performance potential</h3>
+      <div class="perf-meter">
+        <div id="perfText"></div>
+        <div class="disclaimer">This is a qualitative AI estimate based on the text and images provided — not a guaranteed outcome or a substitute for platform analytics.</div>
+      </div>
+    </div>
+
+    <div class="report-section">
+      <h3>Go deeper</h3>
+      <p style="color:var(--ink-dim);font-size:13.5px;margin-top:-4px;">Click a prompt to copy it — paste it back in with your revised draft for another pass.</p>
+      <div class="prompt-list" id="deeperPrompts"></div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="site">Content Intelligence Studio — every score and note above is generated live by Claude, not a fixed rubric.</footer>
+
+<script>
+(function(){
+
+/* ============================================================
+   THEME
+============================================================ */
+const themeBtn = document.getElementById('themeToggle');
+themeBtn.addEventListener('click', () => {
+  const body = document.body;
+  const cur = body.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  body.setAttribute('data-theme', next);
+  themeBtn.textContent = next === 'dark' ? 'Switch to light' : 'Switch to dark';
+});
+
+/* ============================================================
+   STATE
+============================================================ */
+const state = {
+  coverImage: null,   // {mediaType, base64}
+  analyticsImage: null,
+  reviewers: [],       // computed pipeline
+  results: {}          // key -> parsed result
+};
+
+/* ============================================================
+   FILE HANDLING
+============================================================ */
+function setupDropzone(zoneId, inputId, stateKey){
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  zone.addEventListener('click', (e) => { if(e.target.tagName !== 'BUTTON') input.click(); });
+  ['dragover','dragenter'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.style.borderColor = 'var(--gold-soft)'; }));
+  ['dragleave','drop'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.style.borderColor = ''; }));
+  zone.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if(f) handleFile(f, zone, stateKey);
+  });
+  input.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if(f) handleFile(f, zone, stateKey);
+  });
+}
+
+function handleFile(file, zone, stateKey){
+  if(!file.type.startsWith('image/')){ alert('Please upload an image file.'); return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result;
+    const base64 = dataUrl.split(',')[1];
+    state[stateKey] = { mediaType: file.type, base64 };
+    zone.classList.add('has-file');
+    zone.innerHTML = `<button class="dz-clear" data-key="${stateKey}">×</button><img class="dz-preview" src="${dataUrl}">`;
+    zone.querySelector('.dz-clear').addEventListener('click', (e) => {
+      e.stopPropagation();
+      state[stateKey] = null;
+      resetZone(zone, stateKey);
+    });
+    updateRunHint();
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetZone(zone, stateKey){
+  zone.classList.remove('has-file');
+  if(stateKey === 'coverImage'){
+    zone.innerHTML = `<input type="file" id="fileCover" accept="image/*" style="display:none;"><div class="dz-body"><div class="dz-title">Cover image / thumbnail</div><div class="dz-sub">Optional — click or drop an image</div></div>`;
+    setupDropzone('dzCover','fileCover','coverImage');
+  } else {
+    zone.innerHTML = `<input type="file" id="fileAnalytics" accept="image/*" style="display:none;"><div class="dz-body"><div class="dz-title">Analytics screenshot</div><div class="dz-sub">Optional — impressions, engagement, etc.</div></div>`;
+    setupDropzone('dzAnalytics','fileAnalytics','analyticsImage');
+  }
+  updateRunHint();
+}
+
+setupDropzone('dzCover','fileCover','coverImage');
+setupDropzone('dzAnalytics','fileAnalytics','analyticsImage');
+
+const taText = document.getElementById('taText');
+function updateRunHint(){
+  const hasText = taText.value.trim().length > 0;
+  const hasImg = state.coverImage || state.analyticsImage;
+  const hint = document.getElementById('runHint');
+  if(hasText || hasImg){ hint.textContent = 'Ready to run.'; }
+  else { hint.textContent = 'Add text and/or an image, then run.'; }
+}
+taText.addEventListener('input', updateRunHint);
+
+/* ============================================================
+   API CALL WITH RETRY
+============================================================ */
+async function callClaude(systemPrompt, userContent, {maxRetries = 3} = {}){
+  let attempt = 0;
+  let lastErr = null;
+  while(attempt < maxRetries){
+    try{
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2200,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userContent }]
+        })
+      });
+      if(!resp.ok){
+        const t = await resp.text().catch(()=> '');
+        throw new Error('API error ' + resp.status + (t ? (': ' + t.slice(0,200)) : ''));
+      }
+      const data = await resp.json();
+      const textBlocks = (data.content || []).filter(b => b.type === 'text').map(b => b.text);
+      const full = textBlocks.join('\n');
+      if(!full.trim()) throw new Error('Empty response from model.');
+      return full;
+    } catch(err){
+      lastErr = err;
+      attempt++;
+      if(attempt < maxRetries){
+        await new Promise(r => setTimeout(r, 700 * Math.pow(2, attempt)));
+      }
+    }
+  }
+  throw lastErr;
+}
+
+/* ============================================================
+   PARSING — plain-text §MARKER§ protocol, no JSON anywhere
+============================================================ */
+function parseSections(raw){
+  const markerRe = /§([A-Z_]+)§/g;
+  const parts = [];
+  let match, lastIndex = 0, lastKey = null;
+  while((match = markerRe.exec(raw)) !== null){
+    if(lastKey !== null){
+      parts.push([lastKey, raw.slice(lastIndex, match.index)]);
+    }
+    lastKey = match[1];
+    lastIndex = markerRe.lastIndex;
+  }
+  if(lastKey !== null) parts.push([lastKey, raw.slice(lastIndex)]);
+  const out = {};
+  for(const [key, val] of parts){
+    out[key] = (out[key] ? out[key] : '') + val;
+  }
+  Object.keys(out).forEach(k => out[k] = out[k].trim());
+  return out;
+}
+
+function bulletsToArray(str){
+  if(!str) return [];
+  return str.split('\n')
+    .map(l => l.replace(/^[-*•]\s?/, '').replace(/^\[\s?\]\s?/, '').trim())
+    .filter(l => l.length > 0);
+}
+
+function extractScore(str){
+  if(!str) return null;
+  const m = str.match(/\d{1,3}/);
+  if(!m) return null;
+  return Math.max(0, Math.min(100, parseInt(m[0], 10)));
+}
+
+/* ============================================================
+   PIPELINE DEFINITION
+============================================================ */
+function buildPipeline(){
+  const type = document.getElementById('selType').value;
+  const platform = document.getElementById('selPlatform').value;
+  const goal = document.getElementById('selGoal').value;
+  const critique = document.getElementById('selCritique').value;
+  const text = taText.value.trim();
+
+  const baseContext = `Content type: ${type}\nPlatform: ${platform}\nCreator's primary goal: ${goal}\nRequested review tone: ${critique}\n`;
+
+  const reviewers = [];
+
+  reviewers.push({
+    key: 'structure',
+    name: 'Structure & Readability Editor',
+    needsText: true,
+    system: `You are a meticulous structural editor for written content, in the tradition of a senior magazine copy chief. ${baseContext}
+Your job is ONLY structure, flow, clarity, pacing, formatting, and readability — not brand voice or platform strategy (other reviewers cover that).
+Tone instruction: ${critique}. Follow this tone strictly in how you phrase everything, while still being substantive and specific.
+Respond in EXACTLY this plain-text format, with no markdown, no JSON, no extra commentary outside the markers:
+§SCORE§<a single integer 0-100>
+§SUMMARY§<one tight paragraph of overall structural assessment>
+§STRENGTHS§
+- <specific strength>
+- <specific strength>
+§WEAKNESSES§
+- <specific weakness>
+- <specific weakness>
+§OPPORTUNITIES§
+- <specific missed opportunity>
+§RECOMMENDATIONS§
+- <specific, actionable recommendation>
+- <specific, actionable recommendation>
+§END§`
+  });
+
+  reviewers.push({
+    key: 'authority',
+    name: 'Authority & Thought-Leadership Strategist',
+    needsText: true,
+    system: `You are a thought-leadership strategist who has ghostwritten for well-known executives and industry voices. ${baseContext}
+Evaluate ONLY how well this piece builds the author's credibility, expertise, and distinctive point of view — originality of the argument, evidence of experience, confidence of stance, quotability, and whether it reads as generic advice versus a genuine perspective.
+Tone instruction: ${critique}. Follow this tone strictly in phrasing, while remaining substantive and specific.
+Respond in EXACTLY this plain-text format, with no markdown, no JSON, no extra commentary outside the markers:
+§SCORE§<a single integer 0-100>
+§SUMMARY§<one tight paragraph>
+§STRENGTHS§
+- <specific strength>
+- <specific strength>
+§WEAKNESSES§
+- <specific weakness>
+- <specific weakness>
+§OPPORTUNITIES§
+- <specific missed opportunity to deepen authority>
+§RECOMMENDATIONS§
+- <specific, actionable recommendation>
+- <specific, actionable recommendation>
+§END§`
+  });
+
+  reviewers.push({
+    key: 'platform',
+    name: `${platform} Platform Optimizer`,
+    needsText: true,
+    system: `You are a platform growth specialist who has studied ${platform}'s distribution mechanics, algorithm behavior, and audience habits in depth. ${baseContext}
+Evaluate ONLY platform fit: opening-line hook strength for the feed, ideal length and formatting for this platform, hashtag/mention/link usage, native features that could help, posting mechanics, and anything working against or for the platform's algorithm and audience norms.
+Tone instruction: ${critique}. Follow this tone strictly in phrasing, while remaining substantive and specific.
+Respond in EXACTLY this plain-text format, with no markdown, no JSON, no extra commentary outside the markers:
+§SCORE§<a single integer 0-100>
+§SUMMARY§<one tight paragraph>
+§STRENGTHS§
+- <specific strength>
+- <specific strength>
+§WEAKNESSES§
+- <specific weakness>
+- <specific weakness>
+§OPPORTUNITIES§
+- <specific missed opportunity specific to this platform>
+§RECOMMENDATIONS§
+- <specific, actionable recommendation>
+- <specific, actionable recommendation>
+§END§`
+  });
+
+  if(state.coverImage){
+    reviewers.push({
+      key: 'visual',
+      name: 'Visual Content Reviewer',
+      needsText: false,
+      needsImage: 'coverImage',
+      system: `You are an art director specializing in editorial and social visuals for ${platform}. ${baseContext}
+You will be shown an uploaded cover image / thumbnail. Evaluate ONLY the visual: composition, legibility at feed size, text-on-image readability if any, color and contrast, emotional pull, brand consistency, and fit with the stated goal and platform.
+Tone instruction: ${critique}. Follow this tone strictly in phrasing, while remaining substantive and specific. Describe what you actually see in the image before judging it.
+Respond in EXACTLY this plain-text format, with no markdown, no JSON, no extra commentary outside the markers:
+§SCORE§<a single integer 0-100>
+§SUMMARY§<one tight paragraph describing what you see and your overall visual assessment>
+§STRENGTHS§
+- <specific strength>
+- <specific strength>
+§WEAKNESSES§
+- <specific weakness>
+- <specific weakness>
+§OPPORTUNITIES§
+- <specific missed opportunity>
+§RECOMMENDATIONS§
+- <specific, actionable recommendation>
+- <specific, actionable recommendation>
+§END§`
+    });
+  }
+
+  if(state.analyticsImage){
+    reviewers.push({
+      key: 'analytics',
+      name: 'Analytics Interpreter',
+      needsText: false,
+      needsImage: 'analyticsImage',
+      system: `You are a data-literate content analyst who reads platform analytics screenshots for a living. ${baseContext}
+You will be shown an uploaded analytics screenshot. Read the visible numbers and labels carefully, then interpret ONLY performance signals: what the metrics suggest is working or not, benchmarks implied by the numbers shown, and what they mean for this specific piece and goal. If the image is unclear or numbers are unreadable, say so plainly instead of guessing.
+Tone instruction: ${critique}. Follow this tone strictly in phrasing, while remaining substantive and specific.
+Respond in EXACTLY this plain-text format, with no markdown, no JSON, no extra commentary outside the markers:
+§SCORE§<a single integer 0-100 reflecting performance strength implied by the data — if unreadable, estimate 50 and say so in the summary>
+§SUMMARY§<one tight paragraph on what the data shows>
+§STRENGTHS§
+- <specific positive signal>
+- <specific positive signal>
+§WEAKNESSES§
+- <specific concerning signal>
+- <specific concerning signal>
+§OPPORTUNITIES§
+- <specific missed opportunity implied by the data>
+§RECOMMENDATIONS§
+- <specific, actionable recommendation>
+- <specific, actionable recommendation>
+§END§`
+    });
+  }
+
+  return { reviewers, baseContext, type, platform, goal, critique, text };
+}
+
+/* ============================================================
+   UI: PIPELINE RENDERING
+============================================================ */
+function renderReviewerList(reviewers){
+  const list = document.getElementById('reviewerList');
+  list.innerHTML = '';
+  reviewers.forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'reviewer-card queued';
+    el.id = 'rc-' + r.key;
+    el.innerHTML = `<span class="rc-dot"></span><span class="rc-name">${r.name}</span><span class="rc-status">Queued</span>`;
+    list.appendChild(el);
+  });
+  const synth = document.createElement('div');
+  synth.className = 'reviewer-card queued';
+  synth.id = 'rc-synthesis';
+  synth.innerHTML = `<span class="rc-dot"></span><span class="rc-name">Chief Content Strategist (synthesis)</span><span class="rc-status">Queued</span>`;
+  list.appendChild(synth);
+}
+
+function setReviewerStatus(key, status, label){
+  const el = document.getElementById('rc-' + key);
+  if(!el) return;
+  el.className = 'reviewer-card ' + status;
+  el.querySelector('.rc-status').textContent = label;
+}
+
+function log(msg){
+  const box = document.getElementById('activityLog');
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const entry = document.createElement('div');
+  entry.className = 'entry';
+  entry.innerHTML = `<span class="t">${time}</span>${msg}`;
+  box.appendChild(entry);
+  box.scrollTop = box.scrollHeight;
+}
+
+/* ============================================================
+   MAIN RUN FLOW
+============================================================ */
+const btnRun = document.getElementById('btnRun');
+const errorBanner = document.getElementById('errorBanner');
+const errorText = document.getElementById('errorText');
+document.getElementById('btnRetry').addEventListener('click', () => { errorBanner.style.display = 'none'; runAnalysis(); });
+
+btnRun.addEventListener('click', runAnalysis);
+
+async function runAnalysis(){
+  const cfg = buildPipeline();
+  if(!cfg.text && !state.coverImage && !state.analyticsImage){
+    alert('Please add some text or upload at least one image before running the analysis.');
+    return;
+  }
+
+  errorBanner.style.display = 'none';
+  btnRun.disabled = true;
+  btnRun.innerHTML = '<span class="spin"></span>Running…';
+
+  document.getElementById('pipelineSection').style.display = 'block';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('activityLog').innerHTML = '';
+  state.results = {};
+  state.reviewers = cfg.reviewers;
+
+  renderReviewerList(cfg.reviewers);
+  log(`Assembled a ${cfg.reviewers.length}-specialist review team for a ${cfg.type} on ${cfg.platform}.`);
+  document.getElementById('pipelineSection').scrollIntoView({behavior:'smooth', block:'start'});
+
+  try{
+    for(const reviewer of cfg.reviewers){
+      setReviewerStatus(reviewer.key, 'running', 'Reviewing…');
+      log(`${reviewer.name} started review.`);
+
+      const userContent = [];
+      if(reviewer.needsImage){
+        const img = state[reviewer.needsImage];
+        userContent.push({ type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.base64 } });
+        userContent.push({ type: 'text', text: `Please review the attached image as instructed in your system prompt.` });
+      } else {
+        userContent.push({ type: 'text', text: `Here is the content to review:\n\n"""\n${cfg.text || '(No body text was provided.)'}\n"""` });
+      }
+
+      let raw;
+      try{
+        raw = await callClaude(reviewer.system, userContent);
+      } catch(err){
+        setReviewerStatus(reviewer.key, 'error', 'Failed');
+        log(`${reviewer.name} failed: ${err.message}`);
+        throw err;
+      }
+
+      const parsed = parseSections(raw);
+      state.results[reviewer.key] = {
+        name: reviewer.name,
+        score: extractScore(parsed.SCORE),
+        summary: parsed.SUMMARY || '',
+        strengths: bulletsToArray(parsed.STRENGTHS),
+        weaknesses: bulletsToArray(parsed.WEAKNESSES),
+        opportunities: bulletsToArray(parsed.OPPORTUNITIES),
+        recommendations: bulletsToArray(parsed.RECOMMENDATIONS)
+      };
+      setReviewerStatus(reviewer.key, 'done', 'Complete');
+      log(`${reviewer.name} finished — score ${state.results[reviewer.key].score ?? '—'}/100.`);
+    }
+
+    // Synthesis stage
+    setReviewerStatus('synthesis', 'running', 'Synthesizing…');
+    log('Chief Content Strategist began synthesis of all reviewer findings.');
+
+    const digest = cfg.reviewers.map(r => {
+      const res = state.results[r.key];
+      return `### ${res.name} (score ${res.score ?? 'n/a'})\nSummary: ${res.summary}\nStrengths: ${res.strengths.join('; ')}\nWeaknesses: ${res.weaknesses.join('; ')}\nOpportunities: ${res.opportunities.join('; ')}\nRecommendations: ${res.recommendations.join('; ')}`;
+    }).join('\n\n');
+
+    const synthSystem = `You are the Chief Content Strategist leading a content review studio. ${cfg.baseContext}
+You have received independent findings from specialist reviewers below. Synthesize them into a single, cohesive final report for the creator. Do not simply repeat each reviewer verbatim — integrate their points into fresh, prioritized guidance.
+Tone instruction: ${cfg.critique}. Follow this tone strictly, while remaining specific and useful. Predicted performance must be clearly framed as a qualitative AI estimate, not a guarantee, and should avoid fabricated precise numbers (no fake percentages presented as fact) — instead use qualitative + relative language (e.g. "likely above your recent average," "modest lift," "strong potential") with brief reasoning.
+Base the "before" text on the actual opening lines of the creator's content if text was provided; if no text was provided, base it on the visual instead.
+Respond in EXACTLY this plain-text format, with no markdown, no JSON, no extra commentary outside the markers:
+§EXEC_HEADLINE§<a short, warm one-line headline for the executive summary, under 12 words>
+§EXEC_SUMMARY§<a 2-4 sentence executive summary of overall content health>
+§OVERALL_SCORE§<a single integer 0-100, a holistic synthesis of all reviewer scores>
+§TOP_IMPROVEMENTS§
+- <highest-impact improvement, most important first>
+- <next highest-impact improvement>
+- <next highest-impact improvement>
+§BEFORE§<the creator's actual current opening line(s) or visual description, verbatim or closely paraphrased>
+§AFTER§<a rewritten, stronger version of that same opening>
+§HOOKS§
+- <alternative hook option 1>
+- <alternative hook option 2>
+- <alternative hook option 3>
+§TITLES§
+- <alternative title option 1>
+- <alternative title option 2>
+- <alternative title option 3>
+§CHECKLIST§
+- <publishing checklist item>
+- <publishing checklist item>
+- <publishing checklist item>
+- <publishing checklist item>
+§PREDICTED_PERFORMANCE§<2-3 sentences giving a qualitative AI estimate of performance potential and why, clearly labeled as an estimate>
+§DEEPER_PROMPTS§
+- <a follow-up prompt the creator could paste back in for deeper optimization>
+- <a follow-up prompt the creator could paste back in for deeper optimization>
+- <a follow-up prompt the creator could paste back in for deeper optimization>
+§END§
+
+Here are the specialist findings to synthesize:
+
+${digest}`;
+
+    let synthRaw;
+    try{
+      synthRaw = await callClaude(synthSystem, [{ type: 'text', text: 'Please produce the final synthesized report now, following the exact format specified.' }]);
+    } catch(err){
+      setReviewerStatus('synthesis', 'error', 'Failed');
+      log(`Synthesis failed: ${err.message}`);
+      throw err;
+    }
+
+    const synthParsed = parseSections(synthRaw);
+    state.results.synthesis = {
+      headline: synthParsed.EXEC_HEADLINE || 'Executive summary',
+      summary: synthParsed.EXEC_SUMMARY || '',
+      overallScore: extractScore(synthParsed.OVERALL_SCORE),
+      topImprovements: bulletsToArray(synthParsed.TOP_IMPROVEMENTS),
+      before: synthParsed.BEFORE || '',
+      after: synthParsed.AFTER || '',
+      hooks: bulletsToArray(synthParsed.HOOKS),
+      titles: bulletsToArray(synthParsed.TITLES),
+      checklist: bulletsToArray(synthParsed.CHECKLIST),
+      predictedPerformance: synthParsed.PREDICTED_PERFORMANCE || '',
+      deeperPrompts: bulletsToArray(synthParsed.DEEPER_PROMPTS)
+    };
+    setReviewerStatus('synthesis', 'done', 'Complete');
+    log('Synthesis complete. Report ready.');
+
+    renderResults(cfg);
+    document.getElementById('resultsSection').style.display = 'block';
+    setTimeout(() => document.getElementById('resultsSection').scrollIntoView({behavior:'smooth', block:'start'}), 300);
+
+  } catch(err){
+    errorText.textContent = 'Something went wrong: ' + err.message;
+    errorBanner.style.display = 'block';
+  } finally {
+    btnRun.disabled = false;
+    btnRun.textContent = 'Run analysis';
+  }
+}
+
+/* ============================================================
+   RESULTS RENDERING
+============================================================ */
+function drawScoreRing(score){
+  const svg = document.getElementById('scoreRing');
+  const r = 54, cx = 65, cy = 65;
+  const circumference = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, score ?? 0)) / 100;
+  const offset = circumference * (1 - pct);
+  const color = score >= 75 ? 'var(--good)' : score >= 50 ? 'var(--warn)' : 'var(--bad)';
+  svg.innerHTML = `
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--line)" stroke-width="9"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="9"
+      stroke-linecap="round" stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}"
+      transform="rotate(-90 ${cx} ${cy})" id="ringFill" style="transition:stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1);"/>
+    <text x="${cx}" y="${cy+7}" text-anchor="middle" font-family="var(--serif)" font-size="26" fill="var(--ink)">${score ?? '—'}</text>
+  `;
+  requestAnimationFrame(() => {
+    const ring = document.getElementById('ringFill');
+    if(ring) ring.style.strokeDashoffset = offset;
+  });
+}
+
+function renderResults(cfg){
+  const synth = state.results.synthesis;
+
+  document.getElementById('execHeadline').textContent = synth.headline;
+  document.getElementById('execSummary').textContent = synth.summary;
+  drawScoreRing(synth.overallScore);
+
+  // category grid
+  const grid = document.getElementById('categoryGrid');
+  grid.innerHTML = '';
+  cfg.reviewers.forEach(r => {
+    const res = state.results[r.key];
+    const card = document.createElement('div');
+    card.className = 'cat-card';
+    card.innerHTML = `<h4>${res.name}</h4><div class="bar-track"><div class="bar-fill" data-score="${res.score ?? 0}"></div></div><div class="cat-score">${res.score ?? '—'} / 100</div>`;
+    grid.appendChild(card);
+  });
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.bar-fill').forEach(el => { el.style.width = el.dataset.score + '%'; });
+  });
+
+  // tabs
+  const tabBar = document.getElementById('tabBar');
+  const tabPanels = document.getElementById('tabPanels');
+  tabBar.innerHTML = '';
+  tabPanels.innerHTML = '';
+  cfg.reviewers.forEach((r, i) => {
+    const res = state.results[r.key];
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
+    btn.textContent = res.name;
+    btn.dataset.target = 'panel-' + r.key;
+    btn.addEventListener('click', () => switchTab(btn.dataset.target));
+    tabBar.appendChild(btn);
+
+    const panel = document.createElement('div');
+    panel.className = 'tab-panel' + (i === 0 ? ' active' : '');
+    panel.id = 'panel-' + r.key;
+    panel.innerHTML = `
+      <div class="rev-block"><h5>Summary</h5><p>${res.summary}</p></div>
+      <div class="two-col">
+        <div class="rev-block"><h5>Strengths</h5><ul>${res.strengths.map(s=>`<li>${s}</li>`).join('') || '<li>—</li>'}</ul></div>
+        <div class="rev-block"><h5>Weaknesses</h5><ul>${res.weaknesses.map(s=>`<li>${s}</li>`).join('') || '<li>—</li>'}</ul></div>
+      </div>
+      <div class="two-col">
+        <div class="rev-block"><h5>Missed opportunities</h5><ul>${res.opportunities.map(s=>`<li>${s}</li>`).join('') || '<li>—</li>'}</ul></div>
+        <div class="rev-block"><h5>Recommendations</h5><ul>${res.recommendations.map(s=>`<li>${s}</li>`).join('') || '<li>—</li>'}</ul></div>
+      </div>
+    `;
+    tabPanels.appendChild(panel);
+  });
+
+  function switchTab(target){
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.target === target));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === target));
+  }
+
+  // top improvements
+  document.getElementById('topImprovements').innerHTML = synth.topImprovements.map(x => `<li>${x}</li>`).join('') || '<li>—</li>';
+
+  // before/after
+  document.getElementById('beforeText').textContent = synth.before || '—';
+  document.getElementById('afterText').textContent = synth.after || '—';
+
+  // hooks/titles
+  document.getElementById('hookList').innerHTML = synth.hooks.map(h => chipHTML(h)).join('');
+  document.getElementById('titleList').innerHTML = synth.titles.map(t => chipHTML(t)).join('');
+  attachCopyHandlers();
+
+  // checklist
+  document.getElementById('checklistWrap').innerHTML = synth.checklist.map((c,i) => `
+    <div class="checklist-item"><input type="checkbox" id="cl-${i}"><label for="cl-${i}">${c}</label></div>
+  `).join('') || '<p style="color:var(--ink-dim);">—</p>';
+
+  // predicted performance
+  document.getElementById('perfText').textContent = synth.predictedPerformance || '—';
+
+  // deeper prompts
+  document.getElementById('deeperPrompts').innerHTML = synth.deeperPrompts.map(p => `<div class="prompt-item" data-copy="${escapeAttr(p)}">${p}</div>`).join('') || '';
+  document.querySelectorAll('.prompt-item').forEach(el => {
+    el.addEventListener('click', () => {
+      navigator.clipboard?.writeText(el.dataset.copy).catch(()=>{});
+      const original = el.textContent;
+      el.textContent = 'Copied to clipboard ✓';
+      setTimeout(() => { el.textContent = original; }, 1200);
+    });
+  });
+}
+
+function chipHTML(text){
+  return `<div class="chip"><span>${text}</span><button data-copy="${escapeAttr(text)}">Copy</button></div>`;
+}
+function escapeAttr(s){
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+}
+function attachCopyHandlers(){
+  document.querySelectorAll('.chip button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      navigator.clipboard?.writeText(btn.dataset.copy).catch(()=>{});
+      const original = btn.textContent;
+      btn.textContent = 'Copied';
+      setTimeout(() => { btn.textContent = original; }, 1200);
+    });
+  });
+}
+
+updateRunHint();
+})();
+</script>
+</body>
+</html>
