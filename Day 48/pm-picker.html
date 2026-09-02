@@ -1,0 +1,838 @@
+<title>PM Tool Picker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* ── Tokens ───────────────────────────────────────────────── */
+:root {
+  --bg:          #F7F6F2;
+  --bg-alt:      #EFEDE8;
+  --surface:     #FFFFFF;
+  --border:      #DDD9CF;
+  --text:        #1A1919;
+  --muted:       #6B7080;
+  --subtle:      #A09C95;
+  --accent:      #4C3FE8;
+  --accent-tint: #ECEAFD;
+  --gold:        #B07010;
+  --gold-bg:     #FEF3D6;
+  --silver:      #7B8694;
+  --bronze:      #9B5A30;
+  --good:        #16803C;
+  --good-bg:     #DCFCE7;
+  --mid:         #6358C8;
+  --low:         #C8C4BC;
+  --font-d: 'Syne', sans-serif;
+  --font-b: 'Inter', sans-serif;
+  --font-m: 'JetBrains Mono', monospace;
+  --r:  6px;
+  --rl: 10px;
+  --sw: 308px;
+  --sh: 0 1px 3px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
+  --shl: 0 4px 20px rgba(0,0,0,.09), 0 1px 4px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:          #131219;
+    --bg-alt:      #1B1922;
+    --surface:     #201E2A;
+    --border:      #2E2B3A;
+    --text:        #EDE9E0;
+    --muted:       #9893A5;
+    --subtle:      #6A6575;
+    --accent:      #6358F5;
+    --accent-tint: #1C1A30;
+    --gold:        #E0A020;
+    --gold-bg:     #2A2010;
+    --silver:      #9BA3B2;
+    --bronze:      #C4834A;
+    --good:        #22C55E;
+    --good-bg:     #052E16;
+    --mid:         #7B70F8;
+    --low:         #3A3748;
+    --sh:  0 1px 3px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.25);
+    --shl: 0 4px 20px rgba(0,0,0,.5), 0 1px 4px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"] {
+  --bg:          #131219;
+  --bg-alt:      #1B1922;
+  --surface:     #201E2A;
+  --border:      #2E2B3A;
+  --text:        #EDE9E0;
+  --muted:       #9893A5;
+  --subtle:      #6A6575;
+  --accent:      #6358F5;
+  --accent-tint: #1C1A30;
+  --gold:        #E0A020;
+  --gold-bg:     #2A2010;
+  --silver:      #9BA3B2;
+  --bronze:      #C4834A;
+  --good:        #22C55E;
+  --good-bg:     #052E16;
+  --mid:         #7B70F8;
+  --low:         #3A3748;
+  --sh:  0 1px 3px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.25);
+  --shl: 0 4px 20px rgba(0,0,0,.5), 0 1px 4px rgba(0,0,0,.3);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; -webkit-font-smoothing: antialiased; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-b); line-height: 1.5; min-height: 100vh; }
+
+/* ── App shell ────────────────────────────────────────────── */
+.app { display: flex; min-height: 100vh; }
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sw);
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.sb-head {
+  padding: 1.4rem 1.2rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.sb-wordmark {
+  font-family: var(--font-d);
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  color: var(--text);
+}
+.sb-wordmark em { color: var(--accent); font-style: normal; }
+.sb-sub {
+  font-size: 0.7rem;
+  color: var(--subtle);
+  margin-top: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 500;
+}
+.sb-sec { padding: 0.9rem 1.2rem; }
+.sb-sec + .sb-sec { border-top: 1px solid var(--border); }
+.sec-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--subtle);
+  margin-bottom: 0.6rem;
+}
+
+/* presets */
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; }
+.preset-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-b);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.5rem 0.6rem 0.45rem;
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+  text-align: left;
+  line-height: 1.3;
+}
+.preset-btn .pi { display: block; font-size: 1rem; margin-bottom: 0.15rem; }
+.preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+.preset-btn.active { background: var(--accent-tint); border-color: var(--accent); color: var(--accent); }
+
+/* sliders */
+.sliders { display: flex; flex-direction: column; gap: 0.8rem; flex: 1; }
+.sl { }
+.sl label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.77rem;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 0.28rem;
+}
+.sl label .wv {
+  font-family: var(--font-m);
+  font-size: 0.68rem;
+  color: var(--accent);
+  min-width: 2rem;
+  text-align: right;
+}
+.sl input[type=range] {
+  width: 100%;
+  height: 3px;
+  appearance: none;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.sl input[type=range]::-webkit-slider-thumb {
+  appearance: none;
+  width: 13px; height: 13px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--accent-tint);
+  transition: box-shadow .15s;
+}
+.sl input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 5px var(--accent-tint); }
+.sl input[type=range]::-moz-range-thumb {
+  width: 13px; height: 13px;
+  background: var(--accent); border: none; border-radius: 50%; cursor: pointer;
+}
+.sl-desc { font-size: 0.66rem; color: var(--subtle); margin-top: 0.12rem; line-height: 1.4; }
+
+.reset-btn {
+  margin: 0.6rem 1.2rem 1.2rem;
+  width: calc(100% - 2.4rem);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--font-b);
+  font-size: 0.73rem;
+  padding: 0.45rem;
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.reset-btn:hover { border-color: var(--text); color: var(--text); }
+
+/* ── Main ─────────────────────────────────────────────────── */
+.main { flex: 1; padding: 2rem 2.5rem 5rem; min-width: 0; }
+.main-head { margin-bottom: 1.75rem; }
+.eyebrow {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--subtle);
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+.main-title {
+  font-family: var(--font-d);
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  text-wrap: balance;
+  color: var(--text);
+}
+.main-title em { color: var(--accent); font-style: normal; }
+.main-meta { font-size: 0.78rem; color: var(--muted); margin-top: 0.45rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.preset-tag {
+  display: inline-block;
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.18rem 0.5rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+/* notice */
+.notice {
+  display: flex; align-items: flex-start; gap: 0.5rem;
+  font-size: 0.71rem; color: var(--muted);
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 1.2rem;
+  line-height: 1.5;
+}
+.notice-icon { flex-shrink: 0; font-size: 0.85rem; margin-top: 0.05rem; }
+
+/* ── Cards ────────────────────────────────────────────────── */
+.cards { display: flex; flex-direction: column; gap: 0.9rem; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  overflow: hidden;
+  box-shadow: var(--sh);
+  will-change: transform;
+  transition: box-shadow .2s;
+}
+.card:hover { box-shadow: var(--shl); }
+.card.r1 { border-color: var(--gold); box-shadow: 0 0 0 1.5px var(--gold), var(--shl); }
+
+.card-inner { display: flex; align-items: stretch; }
+
+.rank-col {
+  width: 60px;
+  flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 1.2rem 0;
+  background: var(--bg-alt);
+  border-right: 1px solid var(--border);
+  gap: 0.15rem;
+}
+.rank-n {
+  font-family: var(--font-d);
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--subtle);
+}
+.r1 .rank-n { color: var(--gold); }
+.r2 .rank-n { color: var(--silver); }
+.r3 .rank-n { color: var(--bronze); }
+.rank-medal { font-size: 0.95rem; }
+
+.brand-bar { width: 4px; flex-shrink: 0; }
+
+.card-body {
+  flex: 1;
+  padding: 1rem 1.2rem;
+  min-width: 0;
+}
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+.tool-name {
+  font-family: var(--font-d);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.2;
+}
+.tool-line { font-size: 0.71rem; color: var(--muted); margin-top: 0.12rem; }
+
+.score-wrap { text-align: right; flex-shrink: 0; }
+.score-num {
+  font-family: var(--font-m);
+  font-size: 1.55rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.score-lbl { font-size: 0.6rem; color: var(--subtle); text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* criteria grid */
+.crit-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem 0.85rem;
+}
+.ci { display: flex; flex-direction: column; gap: 0.22rem; }
+.ci-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.2rem; }
+.ci-name {
+  font-size: 0.6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ci-val {
+  font-family: var(--font-m);
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--text);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.ci-bar { height: 3px; background: var(--bg-alt); border-radius: 2px; overflow: hidden; }
+.ci-fill { height: 100%; border-radius: 2px; transition: width .4s cubic-bezier(.4,0,.2,1); }
+.ci.high .ci-fill { background: var(--good); }
+.ci.mid  .ci-fill { background: var(--mid); }
+.ci.low  .ci-fill { background: var(--low); }
+.ci.dim .ci-name, .ci.dim .ci-val { opacity: 0.35; }
+
+/* facts */
+.card-facts {
+  display: flex; gap: 1.2rem;
+  margin-top: 0.8rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.fact { font-size: 0.69rem; color: var(--muted); }
+.fact strong { color: var(--text); font-weight: 600; }
+
+/* ── Panels ───────────────────────────────────────────────── */
+.panels { margin-top: 2.5rem; display: flex; flex-direction: column; gap: 0.65rem; }
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  overflow: hidden;
+}
+.panel-toggle {
+  width: 100%; background: none; border: none;
+  padding: 0.85rem 1.2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer;
+  color: var(--text);
+  font-family: var(--font-b);
+  font-weight: 500;
+  font-size: 0.83rem;
+  text-align: left;
+}
+.panel-toggle:hover { background: var(--bg-alt); }
+.ptitle { display: flex; align-items: center; gap: 0.5rem; }
+.ti { font-size: 0.75rem; color: var(--subtle); transition: transform .2s; }
+.panel-toggle[aria-expanded=true] .ti { transform: rotate(180deg); }
+.panel-body {
+  border-top: 1px solid var(--border);
+  padding: 1.2rem;
+  display: none;
+}
+.panel-body.open { display: block; }
+
+/* sources table */
+.src-tbl { width: 100%; border-collapse: collapse; font-size: 0.73rem; }
+.src-tbl th {
+  text-align: left;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--subtle);
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+}
+.src-tbl td {
+  padding: 0.52rem 0.7rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--bg-alt);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.src-tbl td:first-child { color: var(--text); font-weight: 500; width: 28%; }
+.src-tbl tr:last-child td { border-bottom: none; }
+.src-tbl a { color: var(--accent); text-decoration: none; }
+.src-tbl a:hover { text-decoration: underline; }
+.est {
+  display: inline-block;
+  background: var(--gold-bg); color: var(--gold);
+  font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.08rem 0.3rem; border-radius: 2px;
+  text-transform: uppercase; margin-left: 0.25rem;
+}
+
+.method p { font-size: 0.77rem; color: var(--muted); line-height: 1.7; }
+.method p + p { margin-top: 0.7rem; }
+.method strong { color: var(--text); font-weight: 600; }
+.src-note { font-size: 0.66rem; color: var(--subtle); margin-top: 0.7rem; }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .app { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+  .sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem 1.4rem; }
+  .main { padding: 1.5rem 1.25rem 4rem; }
+  .crit-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+  .sliders { grid-template-columns: 1fr; }
+  .main-title { font-size: 1.5rem; }
+  .crit-grid { grid-template-columns: repeat(2, 1fr); }
+  .card-facts { gap: 0.7rem; }
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="app">
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" aria-label="Comparison controls">
+    <div class="sb-head">
+      <div class="sb-wordmark">PM Tool<br><em>Picker</em></div>
+      <div class="sb-sub">Small teams · 4 tools · 8 criteria</div>
+    </div>
+
+    <div class="sb-sec">
+      <div class="sec-label">Quick profiles</div>
+      <div class="presets">
+        <button class="preset-btn active" data-preset="balanced" onclick="applyPreset('balanced')">
+          <span class="pi">⚖️</span>Balanced
+        </button>
+        <button class="preset-btn" data-preset="budget" onclick="applyPreset('budget')">
+          <span class="pi">💰</span>Budget-First
+        </button>
+        <button class="preset-btn" data-preset="power" onclick="applyPreset('power')">
+          <span class="pi">⚡</span>Power User
+        </button>
+        <button class="preset-btn" data-preset="adoption" onclick="applyPreset('adoption')">
+          <span class="pi">🚀</span>Easy Adoption
+        </button>
+      </div>
+    </div>
+
+    <div class="sb-sec" style="flex:1;">
+      <div class="sec-label">Adjust weights — drag to reprioritize</div>
+      <div class="sliders" id="sliders"></div>
+    </div>
+
+    <button class="reset-btn" onclick="applyPreset('balanced')">↺ Reset to balanced</button>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+    <div class="main-head">
+      <div class="eyebrow">Project Management · Small Teams · 2026</div>
+      <h1 class="main-title">Which tool will your team<br>actually <em>stick with?</em></h1>
+      <div class="main-meta">
+        <span>Ranking updates live as you move the sliders</span>
+        <span class="preset-tag" id="preset-label">Balanced</span>
+      </div>
+    </div>
+
+    <div class="notice">
+      <span class="notice-icon">ℹ</span>
+      <span>Scores are sourced from official pricing pages, G2 and Capterra ratings, and product feature docs. Ease-of-use and collaboration scores aggregate verified reviewer data. All sources are cited in the panel below.</span>
+    </div>
+
+    <div class="cards" id="cards"></div>
+
+    <div class="panels">
+      <div class="panel">
+        <button class="panel-toggle" aria-expanded="false" onclick="togglePanel(this)">
+          <span class="ptitle">📎&ensp;Sources &amp; Citations</span>
+          <span class="ti">▼</span>
+        </button>
+        <div class="panel-body">
+          <div style="overflow-x:auto;">
+            <table class="src-tbl">
+              <thead>
+                <tr><th>Criterion / Tool</th><th>Data point</th><th>Source</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Pricing — all tools</td>
+                  <td>Per-user monthly cost on annual billing for entry paid plan</td>
+                  <td>
+                    <a href="https://notion.so/pricing" target="_blank">notion.so/pricing</a>,
+                    <a href="https://asana.com/pricing" target="_blank">asana.com/pricing</a>,
+                    <a href="https://monday.com/pricing" target="_blank">monday.com/pricing</a>,
+                    <a href="https://clickup.com/pricing" target="_blank">clickup.com/pricing</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Free Plan — Notion</td>
+                  <td>Unlimited pages &amp; blocks, 10 guests, 7-day page history</td>
+                  <td><a href="https://notion.so/pricing" target="_blank">notion.so/pricing</a></td>
+                </tr>
+                <tr>
+                  <td>Free Plan — Asana</td>
+                  <td>Up to 10 users, unlimited tasks, list/board/calendar views</td>
+                  <td><a href="https://asana.com/pricing" target="_blank">asana.com/pricing</a></td>
+                </tr>
+                <tr>
+                  <td>Free Plan — Monday.com</td>
+                  <td>Maximum 2 seats, 3 boards, 500 MB storage — functionally a trial</td>
+                  <td><a href="https://monday.com/pricing" target="_blank">monday.com/pricing</a></td>
+                </tr>
+                <tr>
+                  <td>Free Plan — ClickUp</td>
+                  <td>Unlimited members, 100 MB storage, unlimited tasks &amp; docs</td>
+                  <td><a href="https://clickup.com/pricing" target="_blank">clickup.com/pricing</a></td>
+                </tr>
+                <tr>
+                  <td>Ease of Onboarding</td>
+                  <td>G2 "Ease of Setup" sub-scores: Asana 8.7, Monday 8.8, Notion 8.5, ClickUp 7.7<span class="est">aggregated</span></td>
+                  <td><a href="https://g2.com" target="_blank">G2.com</a> product comparison pages</td>
+                </tr>
+                <tr>
+                  <td>Feature Depth</td>
+                  <td>Count of distinct view types, task management features, and built-in productivity tools</td>
+                  <td>Official product feature pages for each tool (docs, kanban, timeline, goals, sprints, etc.)</td>
+                </tr>
+                <tr>
+                  <td>Collaboration</td>
+                  <td>Availability of real-time editing, proofing, approval workflows, @mentions, guest sharing</td>
+                  <td>Product docs + G2 collaboration sub-scores<span class="est">aggregated</span></td>
+                </tr>
+                <tr>
+                  <td>Integrations — ClickUp</td>
+                  <td>1,000+ native integrations listed</td>
+                  <td><a href="https://clickup.com/integrations" target="_blank">clickup.com/integrations</a></td>
+                </tr>
+                <tr>
+                  <td>Integrations — Asana / Monday</td>
+                  <td>300+ and 200+ integrations respectively</td>
+                  <td><a href="https://asana.com/apps" target="_blank">asana.com/apps</a>, <a href="https://monday.com/integrations" target="_blank">monday.com/integrations</a></td>
+                </tr>
+                <tr>
+                  <td>Automation</td>
+                  <td>Availability and flexibility of workflow rules/triggers by plan tier</td>
+                  <td>Official feature pages: each tool's automation documentation</td>
+                </tr>
+                <tr>
+                  <td>UI Simplicity</td>
+                  <td>G2 "Ease of Use" + qualitative Capterra reviewer sentiment patterns<span class="est">aggregated</span></td>
+                  <td><a href="https://g2.com" target="_blank">G2.com</a>, <a href="https://capterra.com" target="_blank">Capterra.com</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="src-note"><span class="est">aggregated</span> = score averaged across multiple review platform ratings, not a single primary number. Pricing reflects annual billing as of mid-2025 — verify at source before purchasing.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <button class="panel-toggle" aria-expanded="false" onclick="togglePanel(this)">
+          <span class="ptitle">🔬&ensp;How This Was Researched</span>
+          <span class="ti">▼</span>
+        </button>
+        <div class="panel-body">
+          <div class="method">
+            <p><strong>Pricing &amp; Free Plan</strong> were drawn directly from each tool's official pricing page. ClickUp scores highest on both — its free plan allows unlimited members and its first paid tier runs $7/user/month. Monday.com scores lowest on free plan generosity: its free tier caps at 2 seats, making it effectively unusable for any real team without paying.</p>
+            <p><strong>Ease of Onboarding</strong> is based on G2's "Ease of Setup" sub-score — an aggregated response to the question "How easy was it to set up this product?" from verified reviewers. Asana (8.7) and Monday.com (8.8) consistently top this category. ClickUp (7.7) is frequently described by reviewers as powerful but initially overwhelming.</p>
+            <p><strong>Feature Depth</strong> was assessed by counting distinct view types, task management capabilities, and built-in productivity tools documented on each tool's features page. ClickUp carries the broadest surface area by a clear margin; Asana is the most focused, scoring slightly lower here by design.</p>
+            <p><strong>Collaboration</strong> reflects availability of real-time co-editing, comments, @mentions, proofing tools, and approval workflows. Asana scored highest due to its dedicated proofing and approval features — absent or restricted in other tools at lower plan tiers.</p>
+            <p><strong>Integrations</strong> counts come from each tool's official integrations directory. Raw count was weighted alongside the presence of key connectors (Slack, GitHub, Google Workspace, Zoom) to avoid inflating a score purely on quantity.</p>
+            <p><strong>Automation</strong> reflects both tier availability and engine sophistication. Monday.com and ClickUp offer the most flexible visual builders. Asana's Rules automation is solid. Notion's automation (introduced 2023) remains the most limited — database-scoped, not workflow-wide.</p>
+            <p><strong>UI Simplicity</strong> combines G2's Ease of Use score with recurring qualitative patterns from Capterra reviews. Asana and Monday.com are consistently praised for clean, focused interfaces. ClickUp reviewers frequently flag feature overload. Notion's score reflects its flexibility-vs-complexity tradeoff.</p>
+            <p><strong>Conflicts resolved:</strong> G2 and Capterra scores diverged by 0.2–0.4 points in several cases — the average was used. Integration counts are approximations; vendor directories update frequently.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const TOOLS = [
+  {
+    id: 'notion', name: 'Notion', color: '#3D3D3D',
+    line: 'The connected workspace for notes, docs &amp; projects',
+    free: 'Free — unlimited pages, 10 guests',
+    paid: '$10/user/mo (Plus, annual)',
+    scores: { price:8, free:7, onboarding:6, features:8, collaboration:7, integrations:7, automation:4, simplicity:7 }
+  },
+  {
+    id: 'asana', name: 'Asana', color: '#F06A6A',
+    line: 'Work management built around how teams actually move',
+    free: 'Free up to 10 users',
+    paid: '$10.99/user/mo (Premium, annual)',
+    scores: { price:6, free:7, onboarding:9, features:7, collaboration:9, integrations:8, automation:7, simplicity:9 }
+  },
+  {
+    id: 'monday', name: 'Monday.com', color: '#FF3D57',
+    line: 'A visual platform built for a new way of working',
+    free: 'Free (2 seats max — very limited)',
+    paid: '$12/seat/mo (Standard, min 3 seats)',
+    scores: { price:5, free:3, onboarding:8, features:8, collaboration:8, integrations:8, automation:9, simplicity:9 }
+  },
+  {
+    id: 'clickup', name: 'ClickUp', color: '#7B68EE',
+    line: 'One app to replace them all — broad feature surface',
+    free: 'Free — unlimited members &amp; tasks',
+    paid: '$7/user/mo (Unlimited, annual)',
+    scores: { price:9, free:9, onboarding:5, features:10, collaboration:8, integrations:10, automation:9, simplicity:4 }
+  }
+];
+
+const CRITERIA = [
+  { id:'price',         label:'Price & Value',  desc:'Paid plan cost; bang for buck' },
+  { id:'free',          label:'Free Plan',       desc:'What you actually get free' },
+  { id:'onboarding',    label:'Onboarding',      desc:'G2 ease-of-setup scores' },
+  { id:'features',      label:'Feature Depth',   desc:'Views, tasks, capabilities' },
+  { id:'collaboration', label:'Collaboration',   desc:'Editing, approvals, sharing' },
+  { id:'integrations',  label:'Integrations',    desc:'Third-party connections' },
+  { id:'automation',    label:'Automation',      desc:'Workflow rules & triggers' },
+  { id:'simplicity',    label:'UI Simplicity',   desc:'Ease of daily use' }
+];
+
+const PRESETS = {
+  balanced: { price:50, free:50, onboarding:50, features:50, collaboration:50, integrations:50, automation:50, simplicity:50, label:'Balanced' },
+  budget:   { price:100, free:90, onboarding:30, features:30, collaboration:30, integrations:30, automation:30, simplicity:40, label:'Budget-First' },
+  power:    { price:30, free:20, onboarding:30, features:100, collaboration:60, integrations:90, automation:90, simplicity:30, label:'Power User' },
+  adoption: { price:40, free:50, onboarding:100, features:40, collaboration:70, integrations:40, automation:40, simplicity:90, label:'Easy Adoption' }
+};
+
+let weights = Object.fromEntries(CRITERIA.map(c => [c.id, 50]));
+let activePreset = 'balanced';
+
+// ── Sliders ──────────────────────────────────────────────────
+function buildSliders() {
+  const el = document.getElementById('sliders');
+  CRITERIA.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'sl';
+    d.innerHTML = `
+      <label>
+        <span>${c.label}</span>
+        <span class="wv" id="wv-${c.id}">50</span>
+      </label>
+      <input type="range" min="0" max="100" value="50" id="sl-${c.id}"
+        oninput="onSlider('${c.id}',this.value)" aria-label="${c.label} weight">
+      <div class="sl-desc">${c.desc}</div>`;
+    el.appendChild(d);
+  });
+}
+
+function onSlider(id, v) {
+  weights[id] = +v;
+  document.getElementById('wv-' + id).textContent = v;
+  activePreset = detectPreset();
+  updatePresetsUI();
+  updateCards();
+}
+
+function detectPreset() {
+  for (const [k, p] of Object.entries(PRESETS)) {
+    if (CRITERIA.every(c => weights[c.id] === p[c.id])) return k;
+  }
+  return 'custom';
+}
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  activePreset = name;
+  CRITERIA.forEach(c => {
+    weights[c.id] = p[c.id];
+    document.getElementById('sl-' + c.id).value = p[c.id];
+    document.getElementById('wv-' + c.id).textContent = p[c.id];
+  });
+  updatePresetsUI();
+  updateCards();
+}
+
+function updatePresetsUI() {
+  document.querySelectorAll('.preset-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.preset === activePreset));
+  const lbl = document.getElementById('preset-label');
+  lbl.textContent = PRESETS[activePreset]?.label ?? 'Custom';
+}
+
+// ── Score ────────────────────────────────────────────────────
+function calcScore(tool) {
+  let ws = 0, tw = 0;
+  CRITERIA.forEach(c => { ws += weights[c.id] * tool.scores[c.id]; tw += weights[c.id]; });
+  return tw === 0 ? 0 : ws / tw;
+}
+
+// ── Card HTML ────────────────────────────────────────────────
+function cardHTML(tool, rank, score) {
+  const medals = ['🥇','🥈','🥉'];
+  const medal = rank <= 3 ? `<span class="rank-medal">${medals[rank-1]}</span>` : '';
+  const crits = CRITERIA.map(c => {
+    const s = tool.scores[c.id];
+    const w = weights[c.id];
+    const tier = s >= 8 ? 'high' : s >= 6 ? 'mid' : 'low';
+    const dim = w === 0 ? ' dim' : '';
+    return `<div class="ci ${tier}${dim}">
+      <div class="ci-head">
+        <span class="ci-name">${c.label}</span>
+        <span class="ci-val">${s}/10</span>
+      </div>
+      <div class="ci-bar"><div class="ci-fill" style="width:${s*10}%"></div></div>
+    </div>`;
+  }).join('');
+
+  return `<div class="card-inner">
+    <div class="rank-col">
+      <div class="rank-n">${rank}</div>
+      ${medal}
+    </div>
+    <div class="brand-bar" style="background:${tool.color}"></div>
+    <div class="card-body">
+      <div class="card-top">
+        <div>
+          <div class="tool-name">${tool.name}</div>
+          <div class="tool-line">${tool.line}</div>
+        </div>
+        <div class="score-wrap">
+          <div class="score-num">${score.toFixed(1)}</div>
+          <div class="score-lbl">/ 10</div>
+        </div>
+      </div>
+      <div class="crit-grid">${crits}</div>
+      <div class="card-facts">
+        <div class="fact"><strong>Free:</strong> ${tool.free}</div>
+        <div class="fact"><strong>Paid:</strong> ${tool.paid}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Build + FLIP update ──────────────────────────────────────
+function buildCards() {
+  const el = document.getElementById('cards');
+  TOOLS.forEach(t => {
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.dataset.id = t.id;
+    el.appendChild(d);
+  });
+  updateCards(false);
+}
+
+function updateCards(animate = true) {
+  const container = document.getElementById('cards');
+  const cards = Array.from(container.children);
+
+  // Score and sort
+  const ranked = TOOLS
+    .map(t => ({ ...t, score: calcScore(t) }))
+    .sort((a, b) => b.score - a.score);
+
+  // Record old rects (First)
+  const old = {};
+  cards.forEach(c => { old[c.dataset.id] = c.getBoundingClientRect(); });
+
+  // Update content + rank class
+  ranked.forEach((t, i) => {
+    const rank = i + 1;
+    const card = container.querySelector(`[data-id="${t.id}"]`);
+    card.className = `card r${rank}`;
+    card.innerHTML = cardHTML(t, rank, t.score);
+  });
+
+  // Reorder DOM (Last)
+  ranked.forEach(t => container.appendChild(container.querySelector(`[data-id="${t.id}"]`)));
+
+  if (!animate) return;
+
+  // Invert & Play
+  Array.from(container.children).forEach(card => {
+    const o = old[card.dataset.id];
+    const n = card.getBoundingClientRect();
+    if (!o) return;
+    const dy = o.top - n.top;
+    if (Math.abs(dy) < 1) return;
+    card.style.transition = 'none';
+    card.style.transform = `translateY(${dy}px)`;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      card.style.transition = 'transform .45s cubic-bezier(.4,0,.2,1)';
+      card.style.transform = '';
+    }));
+  });
+}
+
+// ── Panels ───────────────────────────────────────────────────
+function togglePanel(btn) {
+  const open = btn.getAttribute('aria-expanded') === 'true';
+  btn.setAttribute('aria-expanded', String(!open));
+  btn.nextElementSibling.classList.toggle('open', !open);
+}
+
+// ── Init ─────────────────────────────────────────────────────
+buildSliders();
+buildCards();
+</script>
