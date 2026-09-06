@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Momentum — AI Habit &amp; Goal Coach</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --fg: #1b1b1b; --muted: #6b6b6b; --card: #ffffff;
+    --border: #e4e4e0; --accent: #d9622b; --accent-fg: #ffffff; --danger: #c1432c; --good: #2f9e58; --radius: 10px;
+    font-size: 16px;
+  }
+  html[data-theme="dark"] {
+    --bg: #14151a; --fg: #f1f1ef; --muted: #9a9a9a; --card: #1d1e24;
+    --border: #2c2d34; --accent: #e8804a; --accent-fg: #14151a; --danger: #e8674a; --good: #4cc47c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100vh; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 1.1rem; margin: 0; }
+  header h1 span { color: var(--accent); }
+  nav { display: flex; gap: 8px; }
+  nav button { background: none; border: 1px solid var(--border); color: var(--fg); padding: 6px 14px; border-radius: var(--radius); cursor: pointer; font-size: 0.85rem; }
+  nav button.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  #theme-toggle { border: 1px solid var(--border); background: none; color: var(--fg); border-radius: var(--radius); padding: 6px 10px; cursor: pointer; }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 24px 80px; display: flex; flex-direction: column; gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+  .empty-state { text-align: center; color: var(--muted); padding: 40px 16px; }
+  .empty-state h2 { color: var(--fg); font-size: 1.05rem; margin-bottom: 8px; }
+  form.add-goal { display: flex; gap: 8px; }
+  form.add-goal input { flex: 1; padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--fg); font-size: 0.9rem; }
+  form.add-goal button { padding: 10px 16px; border-radius: var(--radius); border: none; background: var(--accent); color: var(--accent-fg); cursor: pointer; font-weight: 600; }
+  .goal-card { display: flex; flex-direction: column; gap: 10px; }
+  .goal-card .goal-head { display: flex; justify-content: space-between; align-items: center; }
+  .goal-card .goal-head h3 { margin: 0; font-size: 1rem; }
+  .goal-card .goal-actions button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.8rem; margin-left: 8px; }
+  .goal-card .goal-actions button.delete { color: var(--danger); }
+  .habit-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); font-size: 0.88rem; gap: 10px; }
+  .habit-row .habit-main { display: flex; align-items: center; gap: 10px; }
+  .habit-row .streak { font-size: 0.75rem; color: var(--muted); }
+  .habit-row .streak.on { color: var(--good); font-weight: 600; }
+  .checkin-btn { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border); background: var(--bg); cursor: pointer; color: var(--muted); font-size: 0.8rem; }
+  .checkin-btn.done { background: var(--good); border-color: var(--good); color: white; }
+  .category-tag { display: inline-block; font-size: 0.7rem; color: var(--muted); border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; margin-left: 8px; }
+  .heatmap { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin-top: 12px; }
+  .heatmap .week { display: grid; grid-template-rows: repeat(7, 1fr); gap: 4px; }
+  .heatmap .cell { width: 100%; aspect-ratio: 1; border-radius: 3px; background: var(--border); }
+  .heatmap .cell[data-level="3"] { background: var(--good); }
+  .coach-section h3 { margin: 0 0 6px; font-size: 0.95rem; }
+  .coach-section p { margin: 0 0 20px; color: var(--fg); line-height: 1.55; font-size: 0.92rem; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .stat-box { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; }
+  .stat-box .num { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+  .stat-box .label { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+  .per-goal-row { display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--border); font-size: 0.88rem; }
+  footer { text-align: center; color: var(--muted); font-size: 0.75rem; padding: 24px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Momentum<span>.</span></h1>
+    <nav id="main-nav">
+      <button data-panel="goals" class="active">Goals</button>
+      <button data-panel="coach">Coach</button>
+      <button data-panel="stats">Stats</button>
+    </nav>
+    <button id="theme-toggle" aria-label="Toggle theme">🌙</button>
+  </header>
+
+  <main id="app-root"></main>
+
+  <footer>Momentum · Capstone Day 56 · MVP complete — AI Coach &amp; Stats · data stays on this device (localStorage)</footer>
+
+<script>
+/* ===================== storage.js ===================== */
+const Storage = (() => {
+  const KEY = "momentum_state_v1";
+  function defaultState() { return { goals: [], habits: [], checkIns: [], weeklyReports: [], theme: "light" }; }
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return defaultState();
+      return { ...defaultState(), ...JSON.parse(raw) };
+    } catch (e) { console.warn("[Momentum] failed to load state, starting fresh:", e); return defaultState(); }
+  }
+  let saveTimer = null;
+  function saveState(state) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try { localStorage.setItem(KEY, JSON.stringify(state)); }
+      catch (e) { console.error("[Momentum] failed to save state:", e); }
+    }, 250);
+  }
+  return { loadState, saveState };
+})();
+
+/* ===================== date utils ===================== */
+function todayKey(offsetDays = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  d.setHours(0, 0, 0, 0);
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/* ===================== streak / completion helpers ===================== */
+function computeStreak(checkIns, habitId) {
+  const doneDates = new Set(checkIns.filter((c) => c.habitId === habitId && c.done).map((c) => c.date));
+  let streak = 0;
+  for (let i = 0; ; i++) {
+    const key = todayKey(-i);
+    if (doneDates.has(key)) streak++; else break;
+  }
+  return streak;
+}
+function longestStreak(checkIns, habitId) {
+  const doneDates = new Set(checkIns.filter((c) => c.habitId === habitId && c.done).map((c) => c.date));
+  if (doneDates.size === 0) return 0;
+  const sorted = [...doneDates].sort();
+  let longest = 1, current = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = new Date(sorted[i - 1]), cur = new Date(sorted[i]);
+    const diffDays = Math.round((cur - prev) / 86400000);
+    current = diffDays === 1 ? current + 1 : 1;
+    longest = Math.max(longest, current);
+  }
+  return longest;
+}
+function completionRate(checkIns, habitId, windowDays = 7) {
+  const doneDates = new Set(checkIns.filter((c) => c.habitId === habitId && c.done).map((c) => c.date));
+  let done = 0;
+  for (let i = 0; i < windowDays; i++) if (doneDates.has(todayKey(-i))) done++;
+  return Math.round((done / windowDays) * 100);
+}
+
+/* ===================== coach.js ===================== */
+const Coach = (() => {
+  const TEMPLATES = [
+    { keywords: ["run", "5k", "marathon", "fit", "gym", "workout", "exercise", "weight"], category: "fitness",
+      habits: ["Move for 20 minutes", "Track today's workout", "Stretch for 5 minutes"] },
+    { keywords: ["learn", "spanish", "language", "course", "study", "read", "book"], category: "learning",
+      habits: ["Study for 25 minutes", "Review yesterday's notes", "Practice one new concept out loud"] },
+    { keywords: ["ship", "build", "launch", "project", "app", "startup", "side project", "code"], category: "project",
+      habits: ["Work on the project for 30 minutes", "Write down today's next concrete step", "Commit or save progress"] },
+    { keywords: ["sleep", "meditat", "journal", "health", "water", "diet", "eat"], category: "health",
+      habits: ["Log how you feel today", "Drink a full glass of water on waking", "5 minutes of quiet before bed"] },
+  ];
+  const GENERIC = { category: "general", habits: ["Spend 15 minutes on this goal", "Write one sentence of progress", "Review tomorrow's plan tonight"] };
+
+  function suggestHabits(goalTitle) {
+    const lower = (goalTitle || "").toLowerCase();
+    const match = TEMPLATES.find((t) => t.keywords.some((k) => lower.includes(k)));
+    const chosen = match || GENERIC;
+    const now = Date.now();
+    return chosen.habits.map((title, i) => ({ id: `h_${now}_${i}`, title, cadence: "daily", category: chosen.category }));
+  }
+
+  function habitSummaries(state) {
+    return state.habits.map((h) => ({
+      habit: h,
+      streak: computeStreak(state.checkIns, h.id),
+      completion: completionRate(state.checkIns, h.id, 7),
+    }));
+  }
+
+  // Reads real data: strongest habit (highest completion) and weakest
+  // (lowest, only flagged if below 60%) drive the language — never generic filler.
+  function generateWeeklyPlan(state) {
+    const summaries = habitSummaries(state);
+    if (summaries.length === 0) return "Add a goal to get your first weekly plan.";
+    const sorted = [...summaries].sort((a, b) => b.completion - a.completion);
+    const strongest = sorted[0];
+    const weakest = sorted[sorted.length - 1];
+
+    let plan = `This week: keep "${strongest.habit.title}" going — you're at ${strongest.completion}% over the last 7 days`;
+    plan += strongest.streak > 1 ? ` and a ${strongest.streak}-day streak, so protect the exact time of day you've been doing it.` : `, so lock in the same time each day to build a streak.`;
+
+    if (weakest.habit.id !== strongest.habit.id && weakest.completion < 60) {
+      plan += ` "${weakest.habit.title}" is at ${weakest.completion}% — try attaching it right after a habit you already hold, like your check-in itself, so it stops needing its own reminder.`;
+    } else if (summaries.length > 1) {
+      plan += ` Everything else is holding steady — don't add a new habit yet, consistency beats volume this week.`;
+    }
+    return plan;
+  }
+
+  function generateReflection(state) {
+    const summaries = habitSummaries(state);
+    if (summaries.length === 0) return "No check-ins yet — your first reflection appears after a few days of data.";
+    const totalChecks = state.checkIns.filter((c) => c.done).length;
+    const avgCompletion = Math.round(summaries.reduce((s, x) => s + x.completion, 0) / summaries.length);
+    const best = [...summaries].sort((a, b) => b.streak - a.streak)[0];
+
+    let text = `Over the last 7 days you logged ${totalChecks} check-in${totalChecks === 1 ? "" : "s"} across ${summaries.length} habit${summaries.length === 1 ? "" : "s"}, averaging ${avgCompletion}% completion.`;
+    if (best.streak > 0) {
+      text += ` "${best.habit.title}" is your strongest thread right now at a ${best.streak}-day streak — that's the habit to point to on days motivation is low.`;
+    } else {
+      text += ` No streak has started yet — the first check-in of a new streak is the only one that matters this week.`;
+    }
+    return text;
+  }
+
+  return { suggestHabits, generateWeeklyPlan, generateReflection, habitSummaries };
+})();
+
+/* ===================== heatmap.js ===================== */
+const Heatmap = (() => {
+  function buildGrid(checkIns, habitId, weeks = 8) {
+    const doneDates = new Set(checkIns.filter((c) => c.habitId === habitId && c.done).map((c) => c.date));
+    const days = [];
+    for (let i = weeks * 7 - 1; i >= 0; i--) {
+      const key = todayKey(-i);
+      days.push({ date: key, level: doneDates.has(key) ? 3 : 0 });
+    }
+    const grid = [];
+    for (let i = 0; i < days.length; i += 7) grid.push(days.slice(i, i + 7));
+    return grid;
+  }
+  return { buildGrid };
+})();
+
+/* ===================== app.js ===================== */
+const App = (() => {
+  let state = Storage.loadState();
+  let activePanel = "goals";
+  let expandedHabitId = null;
+
+  const root = document.getElementById("app-root");
+  const nav = document.getElementById("main-nav");
+  const themeToggle = document.getElementById("theme-toggle");
+
+  function applyTheme() {
+    document.documentElement.dataset.theme = state.theme;
+    themeToggle.textContent = state.theme === "dark" ? "☀️" : "🌙";
+  }
+
+  function habitsForGoal(goalId) { return state.habits.filter((h) => h.goalId === goalId); }
+  function isDoneToday(habitId) { return state.checkIns.some((c) => c.habitId === habitId && c.date === todayKey() && c.done); }
+  function escapeHtml(str) { const div = document.createElement("div"); div.textContent = str; return div.innerHTML; }
+
+  function renderHeatmap(habitId) {
+    const grid = Heatmap.buildGrid(state.checkIns, habitId);
+    const cols = grid.map((week) => `<div class="week">${week.map((d) => `<div class="cell" data-level="${d.level}" title="${d.date}"></div>`).join("")}</div>`).join("");
+    return `<div class="heatmap">${cols}</div>`;
+  }
+
+  function renderGoals() {
+    const addForm = `
+      <form class="add-goal" id="add-goal-form">
+        <input id="goal-input" type="text" maxlength="80" placeholder="e.g. Run a 5K, Ship my side project, Learn Spanish" required />
+        <button type="submit">Add goal</button>
+      </form>`;
+
+    if (state.goals.length === 0) {
+      return `<div class="card">${addForm}</div>
+        <div class="card empty-state"><h2>No goals yet</h2><p>Add one above — Momentum breaks it into 3 trackable daily habits automatically.</p></div>`;
+    }
+
+    const goalCards = state.goals.map((g) => {
+      const habits = habitsForGoal(g.id);
+      const rows = habits.map((h) => {
+        const streak = computeStreak(state.checkIns, h.id);
+        const done = isDoneToday(h.id);
+        const heat = expandedHabitId === h.id ? renderHeatmap(h.id) : "";
+        return `
+          <div>
+            <div class="habit-row">
+              <div class="habit-main">
+                <button class="checkin-btn ${done ? "done" : ""}" data-action="toggle-checkin" data-id="${h.id}" title="Check in today">${done ? "✓" : ""}</button>
+                <span class="habit-title">${escapeHtml(h.title)}</span>
+              </div>
+              <div>
+                <span class="streak ${streak > 0 ? "on" : ""}">${streak > 0 ? `🔥 ${streak}d` : "no streak"}</span>
+                <button data-action="toggle-heatmap" data-id="${h.id}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.75rem;margin-left:8px;">${expandedHabitId === h.id ? "hide" : "history"}</button>
+              </div>
+            </div>
+            ${heat}
+          </div>`;
+      }).join("");
+      return `
+        <div class="card goal-card" data-goal-id="${g.id}">
+          <div class="goal-head">
+            <h3>${escapeHtml(g.title)}<span class="category-tag">${habits[0] ? habits[0].category : "general"}</span></h3>
+            <div class="goal-actions"><button class="delete" data-action="delete-goal" data-id="${g.id}">Delete</button></div>
+          </div>
+          ${rows}
+        </div>`;
+    }).join("");
+
+    return `<div class="card">${addForm}</div>${goalCards}`;
+  }
+
+  function renderCoach() {
+    if (state.habits.length === 0) {
+      return `<div class="card empty-state"><h2>No coaching yet</h2><p>Add a goal first — the Coach reads your real check-in data, so it needs at least one habit to talk about.</p></div>`;
+    }
+    const plan = Coach.generateWeeklyPlan(state);
+    const reflection = Coach.generateReflection(state);
+    return `
+      <div class="card coach-section">
+        <h3>📅 This week's plan</h3>
+        <p>${escapeHtml(plan)}</p>
+        <h3>🪞 Reflection</h3>
+        <p>${escapeHtml(reflection)}</p>
+      </div>`;
+  }
+
+  function renderStats() {
+    if (state.habits.length === 0) {
+      return `<div class="card empty-state"><h2>No stats yet</h2><p>Stats appear once you have at least one goal and habit.</p></div>`;
+    }
+    const summaries = Coach.habitSummaries(state);
+    const avgCompletion = Math.round(summaries.reduce((s, x) => s + x.completion, 0) / summaries.length) || 0;
+    const bestStreak = Math.max(...state.habits.map((h) => computeStreak(state.checkIns, h.id)), 0);
+    const longest = Math.max(...state.habits.map((h) => longestStreak(state.checkIns, h.id)), 0);
+
+    const perGoalRows = state.goals.map((g) => {
+      const hs = habitsForGoal(g.id);
+      const comp = hs.length ? Math.round(hs.reduce((s, h) => s + completionRate(state.checkIns, h.id, 7), 0) / hs.length) : 0;
+      return `<div class="per-goal-row"><span>${escapeHtml(g.title)}</span><span>${comp}%</span></div>`;
+    }).join("");
+
+    return `
+      <div class="card">
+        <div class="stat-grid">
+          <div class="stat-box"><div class="num">${avgCompletion}%</div><div class="label">7-day completion</div></div>
+          <div class="stat-box"><div class="num">${bestStreak}</div><div class="label">current best streak</div></div>
+          <div class="stat-box"><div class="num">${longest}</div><div class="label">longest streak ever</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.95rem;">Per-goal completion (7-day)</h3>
+        ${perGoalRows}
+      </div>`;
+  }
+
+  function render() {
+    if (activePanel === "goals") root.innerHTML = renderGoals();
+    if (activePanel === "coach") root.innerHTML = renderCoach();
+    if (activePanel === "stats") root.innerHTML = renderStats();
+
+    [...nav.querySelectorAll("button")].forEach((btn) => btn.classList.toggle("active", btn.dataset.panel === activePanel));
+
+    const form = document.getElementById("add-goal-form");
+    if (form) form.addEventListener("submit", onAddGoal);
+    root.querySelectorAll('[data-action="delete-goal"]').forEach((btn) => btn.addEventListener("click", () => onDeleteGoal(btn.dataset.id)));
+    root.querySelectorAll('[data-action="toggle-checkin"]').forEach((btn) => btn.addEventListener("click", () => onToggleCheckin(btn.dataset.id)));
+    root.querySelectorAll('[data-action="toggle-heatmap"]').forEach((btn) => btn.addEventListener("click", () => {
+      expandedHabitId = expandedHabitId === btn.dataset.id ? null : btn.dataset.id;
+      render();
+    }));
+  }
+
+  function onAddGoal(e) {
+    e.preventDefault();
+    const input = document.getElementById("goal-input");
+    const title = input.value.trim();
+    if (!title) return;
+    const goal = { id: `g_${Date.now()}`, title, createdAt: new Date().toISOString() };
+    const newHabits = Coach.suggestHabits(title).map((h) => ({ ...h, goalId: goal.id }));
+    state.goals = [...state.goals, goal];
+    state.habits = [...state.habits, ...newHabits];
+    Storage.saveState(state);
+    render();
+  }
+
+  function onDeleteGoal(goalId) {
+    state.goals = state.goals.filter((g) => g.id !== goalId);
+    state.habits = state.habits.filter((h) => h.goalId !== goalId);
+    const remainingHabitIds = new Set(state.habits.map((h) => h.id));
+    state.checkIns = state.checkIns.filter((c) => remainingHabitIds.has(c.habitId));
+    Storage.saveState(state);
+    render();
+  }
+
+  function onToggleCheckin(habitId) {
+    const key = todayKey();
+    const existing = state.checkIns.find((c) => c.habitId === habitId && c.date === key);
+    if (existing) existing.done = !existing.done;
+    else state.checkIns = [...state.checkIns, { habitId, date: key, done: true }];
+    Storage.saveState(state);
+    render();
+  }
+
+  function wireEvents() {
+    nav.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-panel]");
+      if (!btn) return;
+      activePanel = btn.dataset.panel;
+      render();
+    });
+    themeToggle.addEventListener("click", () => {
+      state.theme = state.theme === "dark" ? "light" : "dark";
+      Storage.saveState(state);
+      applyTheme();
+    });
+  }
+
+  function boot() {
+    applyTheme();
+    wireEvents();
+    render();
+    console.log("[Momentum] Day 56 booted — MVP complete. State:", state);
+  }
+
+  return { boot };
+})();
+
+App.boot();
+</script>
+</body>
+</html>
